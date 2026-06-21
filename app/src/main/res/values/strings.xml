@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">NavMe</string>
+    <string name="notif_access">Conceder acesso às notificações</string>
+    <string name="send_mock">Enviar navegação de teste</string>
+    <string name="mock_sent">Enviado para o relógio</string>
+    <string name="watch_connected">Relógio ligado</string>
+    <string name="watch_disconnected">Relógio não ligado</string>
+</resources>

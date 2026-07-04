@@ -609,8 +609,8 @@ static void prv_speed_sign_update_proc(Layer *layer, GContext *ctx) {
   GPoint center = GPoint(b.size.w / 2, b.size.h / 2);
   uint16_t max_diameter = b.size.w < b.size.h ? b.size.w : b.size.h;
   uint16_t outer_radius = max_diameter / 2 - 6; // leaves 6px white border
-  uint16_t thickness = outer_radius / 6; // proportional border thickness
-  if (thickness < 10) thickness = 10;   // minimum thickness
+  uint16_t thickness = outer_radius / 3; // proportional border thickness (doubled, growing inwards)
+  if (thickness < 20) thickness = 20;   // minimum thickness (doubled)
   uint16_t inner_radius = outer_radius - thickness;
   
   // Draw circular border

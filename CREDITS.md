@@ -19,12 +19,13 @@ reused, and under what terms.
 
 ## Iconography
 
-- The menu/car icon and the **arrival** and **ferry** maneuver icons derive
-  from the Pebble timeline icon set (e.g. `Car_rental`), published by pebble-dev
-  under the Apache 2.0 licence.
-- The remaining maneuver icons (`resources/pebble_icons/pdc/`) were drawn for
-  Steer, informed by the visual language of Google/Material Design and community
-  navigation icon sets.
+- The menu/car icon and the maneuver icon set (`resources/pebble_icons/pdc/`)
+  are **derived from Pebble's own icon artwork** (the timeline / navigation icon
+  set, e.g. `Car_rental`). The vectors were redrawn/traced from those Pebble
+  icons and adapted to Pebble Draw Command format for Steer.
+- That source artwork is published by pebble-dev under the **Apache License
+  2.0**; this derivative is used and redistributed under those terms, with
+  attribution. See <https://github.com/pebble-dev> for the originals.
 
 ## Not included in this repository
 

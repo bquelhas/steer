@@ -1,9 +1,9 @@
 # Steer — Pebble turn-by-turn navigation watchapp
 
 Steer mirrors turn-by-turn navigation from your phone onto a Pebble watch:
-the next maneuver icon, distance, street/instruction text, ETA, and an
-optional speedometer and over-limit alert. It is the watch half of a two-part
-project — the [Steer companion Android app](https://github.com/bquelhas/steer-companion)
+the next maneuver icon, distance, street/instruction text and ETA. It is the
+watch half of a two-part project — the
+[Steer companion Android app](https://github.com/bquelhas/steer-companion)
 reads navigation from your map app and forwards it here.
 
 Built with the Pebble SDK for **aplite, basalt, chalk, diorite and emery**
@@ -28,8 +28,28 @@ Captured on the emery (Pebble Time 2) emulator, driving a simulated trip:
 - Distance + street/instruction line with an animated digit "squash" morph.
 - ETA display.
 - Configurable background colour, per-turn vibration.
-- Optional speedometer and speed-limit alert (fed by the phone's GPS).
-- Favourite destinations you can launch straight from the watch.
+- Speed-limit alert (fed by the phone's GPS).
+- Automatic night backlight: during a maneuver between 20:00 and 07:00 the
+  screen lights itself, tinted **red** on Pebble Time 2 to protect night vision.
+- Interface in English or Portuguese, chosen automatically from the watch
+  language.
+
+### Compatible navigation apps
+
+The companion app reads turn-by-turn guidance from:
+
+- **Google Maps**
+- **OsmAnd** (both the Play and free/F-Droid builds)
+- **CoMaps**
+- **Organic Maps**
+
+Waze can be *launched* to a favourite from the phone, but its notifications
+don't expose the maneuver, so Steer can't mirror a Waze route to the watch.
+
+### Planned / in progress
+
+- On-watch speedometer (the speed-limit alert above already works).
+- Launching a favourite destination directly from the watch.
 
 ## Building
 

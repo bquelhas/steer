@@ -9,6 +9,18 @@ reads navigation from your map app and forwards it here.
 Built with the Pebble SDK for **aplite, basalt, chalk, diorite and emery**
 (Pebble Time 2 is the main target).
 
+## Screenshots
+
+Captured on the emery (Pebble Time 2) emulator, driving a simulated trip:
+
+| Turn left | Turn right | Roundabout exit |
+|:---:|:---:|:---:|
+| ![left](docs/screenshots/01_left.png) | ![right](docs/screenshots/02_right.png) | ![roundabout](docs/screenshots/03_roundabout.png) |
+
+| Continue straight | Arrival |
+|:---:|:---:|
+| ![straight](docs/screenshots/04_straight.png) | ![arrive](docs/screenshots/05_arrive.png) |
+
 ## Features
 
 - Next-maneuver icon (a 41-entry maneuver set drawn as Pebble Draw Commands,

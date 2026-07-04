@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="108" height="108" viewBox="0 0 108 108">
+  <rect x="0" y="0" width="108" height="108" fill="#FF4B49"/>
+  <g transform="translate(24,24) scale(0.75)"
+     stroke-linecap="round" stroke-linejoin="round">
+    <!-- white interior: car body + sills -->
+    <path fill="#FFFFFF" stroke="none"
+          d="M22,25 L35,7 L63,14 L66,36 L70,37 L65,57 L13,44 L18,24 Z"/>
+    <path fill="#FFFFFF" stroke="none" d="M25,47 L22,59 L14,57 L17,45 Z"/>
+    <path fill="#FFFFFF" stroke="none" d="M61,56 L58,68 L50,66 L53,54 Z"/>
+    <!-- black lines: outline, wheels, ground and detail chevrons -->
+    <path fill="none" stroke="#000000" stroke-width="4"
+          d="M25,47 L22,59 L14,57 L17,45
+             M61,56 L58,68 L50,66 L53,54
+             M22,25 L35,7 L63,14 L66,36 L70,37 L65,57 L13,44 L18,24 Z
+             M74,74 L6,74
+             M66,36 L22,25
+             M35,41 L47,44
+             M22,25 L15,19
+             M75,34 L66,36"/>
+    <path fill="none" stroke="#000000" stroke-width="3"
+          d="M61.5,19.5 L33.5,12.5
+             M68,45 L56,42 L58,34
+             M30,27 L28,35 L16,32"/>
+  </g>
+</svg>

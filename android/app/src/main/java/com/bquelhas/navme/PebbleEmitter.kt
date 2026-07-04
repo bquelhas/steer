@@ -7,6 +7,7 @@ import com.getpebble.android.kit.util.PebbleDictionary
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -36,6 +37,14 @@ import kotlinx.coroutines.sync.withLock
  */
 object PebbleEmitter {
     private const val TAG = "NavMe/Emitter"
+
+    /**
+     * Gap between the consecutive AppMessages of a favorites sync. Classic PebbleKit
+     * `sendDataToPebble` is fire-and-forget (no ACK wait), and the Core bridge / watch inbox
+     * silently DROPS messages fired back-to-back — which is why favorites defined on the phone
+     * never showed up on the watch. Pacing the burst lets each message land before the next.
+     */
+    private const val FAV_SEND_GAP_MS = 250L
 
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     private val sendMutex = Mutex()
@@ -119,14 +128,30 @@ object PebbleEmitter {
      * The watch echoes a selection back via [NavKeys.NAV_TRIGGER_ROUTE].
      */
     fun sendFavorites(context: Context) {
-        val favs = FavoritesStore.all(context)
-        send(context, "favCount=${favs.size}") {
-            it.addUint8(NavKeys.NAV_FAV_COUNT, favs.size.toByte())
-        }
-        favs.forEachIndexed { i, fav ->
-            send(context, "fav[$i]=${fav.label}") {
-                it.addUint8(NavKeys.NAV_FAV_INDEX, i.toByte())
-                it.addString(NavKeys.NAV_FAV_NAME, fav.label.take(32))
+        val appCtx = context.applicationContext
+        val favs = FavoritesStore.all(appCtx)
+        // One coroutine for the whole sync so the messages are strictly ordered (count MUST
+        // arrive first — the watch clears its list on NAV_FAV_COUNT) and paced (see
+        // FAV_SEND_GAP_MS). Holding the mutex across the burst also stops a maneuver frame
+        // from interleaving; favorites sync only runs when idle, so the brief hold is fine.
+        scope.launch {
+            sendMutex.withLock {
+                try {
+                    PebbleDictionary()
+                        .apply { addUint8(NavKeys.NAV_FAV_COUNT, favs.size.toByte()) }
+                        .also { PebbleKit.sendDataToPebble(appCtx, NavKeys.WATCH_UUID, it) }
+                    Log.i(TAG, "favCount=${favs.size} -> sent(classic)")
+                    favs.forEachIndexed { i, fav ->
+                        delay(FAV_SEND_GAP_MS)
+                        PebbleDictionary().apply {
+                            addUint8(NavKeys.NAV_FAV_INDEX, i.toByte())
+                            addString(NavKeys.NAV_FAV_NAME, fav.label.take(32))
+                        }.also { PebbleKit.sendDataToPebble(appCtx, NavKeys.WATCH_UUID, it) }
+                        Log.i(TAG, "fav[$i]=${fav.label} -> sent(classic)")
+                    }
+                } catch (e: Exception) {
+                    Log.e(TAG, "sendFavorites failed: ${e.message}")
+                }
             }
         }
     }

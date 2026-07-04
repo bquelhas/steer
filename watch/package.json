@@ -42,6 +42,7 @@
       "NAV_TRIGGER_ROUTE": 14,
       "NAV_SPEED": 15,
       "NAV_REQUEST_FAVS": 16,
+      "NAV_FAV_ICON": 17,
       "NAV_CANCEL": 99
     },
     "resources": {
@@ -261,6 +262,536 @@
           "type": "raw",
           "name": "PDC_ICON_40",
           "file": "pebble_icons/pdc/40_KEEP_RIGHT.pdc"
+        },
+        {
+          "type": "bitmap",
+          "name": "IMAGE_FAV_0",
+          "file": "fav_icons/fav_0.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "IMAGE_FAV_1",
+          "file": "fav_icons/fav_1.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "IMAGE_FAV_2",
+          "file": "fav_icons/fav_2.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "IMAGE_FAV_3",
+          "file": "fav_icons/fav_3.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "IMAGE_FAV_4",
+          "file": "fav_icons/fav_4.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "IMAGE_FAV_5",
+          "file": "fav_icons/fav_5.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "IMAGE_FAV_6",
+          "file": "fav_icons/fav_6.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "IMAGE_FAV_7",
+          "file": "fav_icons/fav_7.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "IMAGE_FAV_8",
+          "file": "fav_icons/fav_8.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "IMAGE_FAV_9",
+          "file": "fav_icons/fav_9.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "IMAGE_FAV_10",
+          "file": "fav_icons/fav_10.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "IMAGE_FAV_11",
+          "file": "fav_icons/fav_11.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "IMAGE_FAV_12",
+          "file": "fav_icons/fav_12.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "IMAGE_FAV_13",
+          "file": "fav_icons/fav_13.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "IMAGE_FAV_14",
+          "file": "fav_icons/fav_14.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "IMAGE_FAV_15",
+          "file": "fav_icons/fav_15.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "IMAGE_FAV_16",
+          "file": "fav_icons/fav_16.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "IMAGE_FAV_17",
+          "file": "fav_icons/fav_17.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "IMAGE_FAV_18",
+          "file": "fav_icons/fav_18.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "IMAGE_FAV_19",
+          "file": "fav_icons/fav_19.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "IMAGE_FAV_20",
+          "file": "fav_icons/fav_20.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "IMAGE_FAV_21",
+          "file": "fav_icons/fav_21.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "IMAGE_FAV_22",
+          "file": "fav_icons/fav_22.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "IMAGE_FAV_23",
+          "file": "fav_icons/fav_23.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "IMAGE_FAV_24",
+          "file": "fav_icons/fav_24.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "IMAGE_FAV_25",
+          "file": "fav_icons/fav_25.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "IMAGE_FAV_26",
+          "file": "fav_icons/fav_26.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "IMAGE_FAV_27",
+          "file": "fav_icons/fav_27.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "IMAGE_FAV_28",
+          "file": "fav_icons/fav_28.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "IMAGE_FAV_29",
+          "file": "fav_icons/fav_29.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "IMAGE_FAV_30",
+          "file": "fav_icons/fav_30.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "IMAGE_FAV_31",
+          "file": "fav_icons/fav_31.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "IMAGE_FAV_32",
+          "file": "fav_icons/fav_32.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "IMAGE_FAV_33",
+          "file": "fav_icons/fav_33.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "IMAGE_FAV_34",
+          "file": "fav_icons/fav_34.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "IMAGE_FAV_35",
+          "file": "fav_icons/fav_35.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "IMAGE_FAV_36",
+          "file": "fav_icons/fav_36.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "IMAGE_FAV_37",
+          "file": "fav_icons/fav_37.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "IMAGE_FAV_38",
+          "file": "fav_icons/fav_38.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "IMAGE_FAV_39",
+          "file": "fav_icons/fav_39.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "IMAGE_FAV_40",
+          "file": "fav_icons/fav_40.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "IMAGE_FAV_41",
+          "file": "fav_icons/fav_41.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "IMAGE_FAV_42",
+          "file": "fav_icons/fav_42.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "IMAGE_FAV_43",
+          "file": "fav_icons/fav_43.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "IMAGE_FAV_44",
+          "file": "fav_icons/fav_44.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "IMAGE_FAV_45",
+          "file": "fav_icons/fav_45.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "IMAGE_FAV_46",
+          "file": "fav_icons/fav_46.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "IMAGE_FAV_47",
+          "file": "fav_icons/fav_47.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "IMAGE_FAV_48",
+          "file": "fav_icons/fav_48.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "IMAGE_FAV_49",
+          "file": "fav_icons/fav_49.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "IMAGE_FAV_50",
+          "file": "fav_icons/fav_50.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "IMAGE_FAV_51",
+          "file": "fav_icons/fav_51.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "IMAGE_FAV_52",
+          "file": "fav_icons/fav_52.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "IMAGE_FAV_53",
+          "file": "fav_icons/fav_53.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "IMAGE_FAV_54",
+          "file": "fav_icons/fav_54.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "IMAGE_FAV_55",
+          "file": "fav_icons/fav_55.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "IMAGE_FAV_56",
+          "file": "fav_icons/fav_56.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "IMAGE_FAV_57",
+          "file": "fav_icons/fav_57.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "IMAGE_FAV_58",
+          "file": "fav_icons/fav_58.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "IMAGE_FAV_59",
+          "file": "fav_icons/fav_59.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "IMAGE_FAV_60",
+          "file": "fav_icons/fav_60.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "IMAGE_FAV_61",
+          "file": "fav_icons/fav_61.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "IMAGE_FAV_62",
+          "file": "fav_icons/fav_62.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "IMAGE_FAV_63",
+          "file": "fav_icons/fav_63.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "IMAGE_FAV_64",
+          "file": "fav_icons/fav_64.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "IMAGE_FAV_65",
+          "file": "fav_icons/fav_65.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "IMAGE_FAV_66",
+          "file": "fav_icons/fav_66.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "IMAGE_FAV_67",
+          "file": "fav_icons/fav_67.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "IMAGE_FAV_68",
+          "file": "fav_icons/fav_68.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "IMAGE_FAV_69",
+          "file": "fav_icons/fav_69.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "IMAGE_FAV_70",
+          "file": "fav_icons/fav_70.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "IMAGE_FAV_71",
+          "file": "fav_icons/fav_71.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "IMAGE_FAV_72",
+          "file": "fav_icons/fav_72.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "IMAGE_FAV_73",
+          "file": "fav_icons/fav_73.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "IMAGE_FAV_74",
+          "file": "fav_icons/fav_74.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "IMAGE_FAV_75",
+          "file": "fav_icons/fav_75.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "IMAGE_FAV_76",
+          "file": "fav_icons/fav_76.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "IMAGE_FAV_77",
+          "file": "fav_icons/fav_77.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "IMAGE_FAV_78",
+          "file": "fav_icons/fav_78.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "IMAGE_FAV_79",
+          "file": "fav_icons/fav_79.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "IMAGE_FAV_80",
+          "file": "fav_icons/fav_80.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "IMAGE_FAV_81",
+          "file": "fav_icons/fav_81.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "IMAGE_FAV_82",
+          "file": "fav_icons/fav_82.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "IMAGE_FAV_83",
+          "file": "fav_icons/fav_83.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "IMAGE_FAV_84",
+          "file": "fav_icons/fav_84.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "IMAGE_FAV_85",
+          "file": "fav_icons/fav_85.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "IMAGE_FAV_86",
+          "file": "fav_icons/fav_86.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "IMAGE_FAV_87",
+          "file": "fav_icons/fav_87.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "IMAGE_FAV_88",
+          "file": "fav_icons/fav_88.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "IMAGE_FAV_89",
+          "file": "fav_icons/fav_89.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "IMAGE_FAV_90",
+          "file": "fav_icons/fav_90.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "IMAGE_FAV_91",
+          "file": "fav_icons/fav_91.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "IMAGE_FAV_92",
+          "file": "fav_icons/fav_92.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "IMAGE_FAV_93",
+          "file": "fav_icons/fav_93.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "IMAGE_FAV_94",
+          "file": "fav_icons/fav_94.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "IMAGE_FAV_95",
+          "file": "fav_icons/fav_95.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "IMAGE_FAV_96",
+          "file": "fav_icons/fav_96.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "IMAGE_FAV_97",
+          "file": "fav_icons/fav_97.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "IMAGE_FAV_98",
+          "file": "fav_icons/fav_98.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "IMAGE_FAV_99",
+          "file": "fav_icons/fav_99.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "IMAGE_FAV_100",
+          "file": "fav_icons/fav_100.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "IMAGE_FAV_101",
+          "file": "fav_icons/fav_101.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "IMAGE_FAV_102",
+          "file": "fav_icons/fav_102.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "IMAGE_FAV_103",
+          "file": "fav_icons/fav_103.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "IMAGE_FAV_104",
+          "file": "fav_icons/fav_104.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "IMAGE_FAV_105",
+          "file": "fav_icons/fav_105.png"
         }
       ]
     }

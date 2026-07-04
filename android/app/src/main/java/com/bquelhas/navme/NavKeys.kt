@@ -45,5 +45,9 @@ object NavKeys {
                                     // watch only holds favorites in RAM, so a fresh launch starts
                                     // empty unless the phone re-pushes. Watch also persists them
                                     // locally (persist_write) for instant offline display.
+    const val NAV_FAV_ICON = 17     // uint8: icon id (0..105) for the favorite at NAV_FAV_INDEX,
+                                    // from the shared fav_icons.tsv manifest (0 = generic pin). Sent
+                                    // in the same message as the favorite's index + name; the watch
+                                    // draws the matching 25x25 glyph in its favorites menu.
     const val NAV_CANCEL = 99       // uint8: navigation stopped / clear display
 }

@@ -14,6 +14,7 @@ object NavPrefs {
     private const val KEY_SPEED_LIMIT = "speed_limit"
     private const val KEY_UNITS = "units"
     private const val KEY_NAV_APP = "nav_app"
+    private const val KEY_DETECT_APPS = "detect_apps"
 
     /** Default watch background = the red used on-watch (NAV_SCREEN_BG #ff4b49). */
     const val DEFAULT_BG_COLOR = 0xFF4B49
@@ -117,5 +118,18 @@ object NavPrefs {
 
     fun setNavApp(context: Context, app: NavApp) {
         prefs(context).edit().putInt(KEY_NAV_APP, app.ordinal).apply()
+    }
+
+    /**
+     * Which navigator packages the notification listener is allowed to read. Defaults to the full
+     * supported set, so behaviour is unchanged until the user narrows it in the Customization tab.
+     * OsmAnd's free + paid packages are treated as one entry keyed on [NaviParser.PKG_OSMAND].
+     */
+    fun getDetectApps(context: Context): Set<String> =
+        prefs(context).getStringSet(KEY_DETECT_APPS, null) ?: NaviParser.SUPPORTED
+
+    fun setDetectApps(context: Context, apps: Set<String>) {
+        // Store a copy: SharedPreferences must not be handed a set it may later mutate.
+        prefs(context).edit().putStringSet(KEY_DETECT_APPS, HashSet(apps)).apply()
     }
 }

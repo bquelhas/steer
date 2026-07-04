@@ -146,6 +146,7 @@ object PebbleEmitter {
                         PebbleDictionary().apply {
                             addUint8(NavKeys.NAV_FAV_INDEX, i.toByte())
                             addString(NavKeys.NAV_FAV_NAME, fav.label.take(32))
+                            addUint8(NavKeys.NAV_FAV_ICON, fav.icon.coerceIn(0, 255).toByte())
                         }.also { PebbleKit.sendDataToPebble(appCtx, NavKeys.WATCH_UUID, it) }
                         Log.i(TAG, "fav[$i]=${fav.label} -> sent(classic)")
                     }

@@ -58,6 +58,10 @@
     <string name="fav_incomplete">Fill in the name and address</string>
     <string name="fav_choose_nav">Navigate with…</string>
     <string name="fav_no_nav_app">No compatible navigation app installed</string>
+    <string name="fav_edit">Edit favourite</string>
+    <string name="fav_icon_label">Icon</string>
+    <string name="fav_icon_change">Change</string>
+    <string name="fav_icon_pick">Choose an icon</string>
     <string name="mock_nav_title">Mock navigation (Maps)</string>
     <string name="mock_nav_caption">Shows the real Google Maps icon in a notification and runs it through the classifier (as with real notifications). Sends the watch the maneuver we READ — to audit how each icon is read, one by one.</string>
     <string name="open_mock_nav">Mock navigation (debug)</string>
@@ -78,4 +82,23 @@
     <string name="pbw_install_chooser">Install watchapp with…</string>
     <string name="pbw_install_none">No Pebble / Core Devices app found to install the pbw</string>
     <string name="pbw_install_missing">This APK doesn\'t bundle the watchapp (pbw). Rebuild with the generated pbw.</string>
+
+    <!-- Tabs -->
+    <string name="tab_home">Home</string>
+    <string name="tab_customization">Custom</string>
+    <string name="tab_favourites">Favs</string>
+    <string name="tab_developer">Dev</string>
+
+    <!-- Customization extras -->
+    <string name="color_caption">The phone app also tints itself with this colour.</string>
+    <string name="detect_apps_label">Navigation apps to read</string>
+    <string name="detect_apps_caption">Steer only reads maneuvers from the apps you tick here. Waze is launch-only (its notification hides the maneuver).</string>
+    <string name="detect_maps">Google Maps</string>
+    <string name="detect_osmand">OsmAnd</string>
+    <string name="detect_comaps">CoMaps</string>
+    <string name="detect_organic">Organic Maps</string>
+
+    <!-- Developer warning -->
+    <string name="developer_warn_title">For testing only</string>
+    <string name="developer_warn_body">These tools test the watch link and the maneuver icons. They send fake navigation — leave them off for normal use.</string>
 </resources>

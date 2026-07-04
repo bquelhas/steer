@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Steer — DARK. The watch face is a bold red screen with white text; the dark
+         theme leans into that: light-red accents on the Material3 dark neutrals. -->
+    <style name="Base.Theme.Steer" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/steer_dark_primary</item>
+        <item name="colorOnPrimary">@color/steer_dark_on_primary</item>
+        <item name="colorPrimaryContainer">@color/steer_dark_primary_container</item>
+        <item name="colorOnPrimaryContainer">@color/steer_dark_on_primary_container</item>
+
+        <item name="colorSecondary">@color/steer_dark_primary</item>
+        <item name="colorSecondaryContainer">@color/steer_dark_primary_container</item>
+        <item name="colorOnSecondaryContainer">@color/steer_dark_on_primary_container</item>
+
+        <item name="colorError">@color/steer_dark_primary</item>
+        <item name="colorErrorContainer">@color/steer_dark_primary_container</item>
+        <item name="colorOnErrorContainer">@color/steer_dark_on_primary_container</item>
+    </style>
+
+    <style name="Theme.Steer" parent="Base.Theme.Steer" />
+</resources>

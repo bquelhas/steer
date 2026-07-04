@@ -6,4 +6,15 @@
     <color name="nav_white">#FFFFFF</color>
     <color name="nav_white_60">#99FFFFFF</color>
     <color name="nav_black">#000000</color>
+
+    <!-- Watch-inspired red brand scheme (Material3 tonal roles, seed #FF4B49). -->
+    <color name="steer_light_primary">#B61E20</color>
+    <color name="steer_light_on_primary">#FFFFFF</color>
+    <color name="steer_light_primary_container">#FFDAD6</color>
+    <color name="steer_light_on_primary_container">#410006</color>
+
+    <color name="steer_dark_primary">#FFB3AE</color>
+    <color name="steer_dark_on_primary">#680011</color>
+    <color name="steer_dark_primary_container">#91000F</color>
+    <color name="steer_dark_on_primary_container">#FFDAD6</color>
 </resources>

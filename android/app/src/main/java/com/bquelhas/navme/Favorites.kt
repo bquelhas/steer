@@ -4,12 +4,20 @@ import android.content.Context
 import org.json.JSONArray
 import org.json.JSONObject
 
-/** A saved destination the user can tap to start navigation. */
-data class Favorite(val label: String, val query: String) {
-    fun toJson(): JSONObject = JSONObject().put("label", label).put("query", query)
+/**
+ * A saved destination the user can tap to start navigation.
+ *
+ * [icon] is the id from the shared `fav_icons.tsv` manifest (0 = generic pin / none). It travels to
+ * the watch as NAV_FAV_ICON so the watch menu can draw the matching glyph. Defaults to 0 for
+ * favourites saved before the icon picker existed.
+ */
+data class Favorite(val label: String, val query: String, val icon: Int = 0) {
+    fun toJson(): JSONObject =
+        JSONObject().put("label", label).put("query", query).put("icon", icon)
 
     companion object {
-        fun fromJson(o: JSONObject) = Favorite(o.optString("label"), o.optString("query"))
+        fun fromJson(o: JSONObject) =
+            Favorite(o.optString("label"), o.optString("query"), o.optInt("icon", 0))
     }
 }
 
@@ -40,6 +48,14 @@ object FavoritesStore {
         val list = all(context)
         list.add(fav)
         save(context, list)
+    }
+
+    fun update(context: Context, index: Int, fav: Favorite) {
+        val list = all(context)
+        if (index in list.indices) {
+            list[index] = fav
+            save(context, list)
+        }
     }
 
     fun removeAt(context: Context, index: Int) {

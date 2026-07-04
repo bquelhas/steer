@@ -58,6 +58,10 @@
     <string name="fav_incomplete">Preenche o nome e a morada</string>
     <string name="fav_choose_nav">Navegar com…</string>
     <string name="fav_no_nav_app">Nenhuma app de navegação compatível instalada</string>
+    <string name="fav_edit">Editar favorito</string>
+    <string name="fav_icon_label">Ícone</string>
+    <string name="fav_icon_change">Mudar</string>
+    <string name="fav_icon_pick">Escolher ícone</string>
     <string name="mock_nav_title">Navegação falsa (Maps)</string>
     <string name="mock_nav_caption">Mostra o ícone real do Google Maps numa notificação e passa-o pelo classificador (como nas notificações reais). Envia para o relógio a manobra que LEMOS — para auditar a leitura de cada ícone, um a um.</string>
     <string name="open_mock_nav">Navegação falsa (debug)</string>
@@ -78,4 +82,23 @@
     <string name="pbw_install_chooser">Instalar watchapp com…</string>
     <string name="pbw_install_none">Nenhuma app da Pebble/Core Devices encontrada para instalar o pbw</string>
     <string name="pbw_install_missing">Este APK não traz o watchapp (pbw). Reconstrói com o pbw gerado.</string>
+
+    <!-- Abas -->
+    <string name="tab_home">Início</string>
+    <string name="tab_customization">Estilo</string>
+    <string name="tab_favourites">Favs</string>
+    <string name="tab_developer">Dev</string>
+
+    <!-- Personalização -->
+    <string name="color_caption">A app do telemóvel também se pinta com esta cor.</string>
+    <string name="detect_apps_label">Apps de navegação a ler</string>
+    <string name="detect_apps_caption">O Steer só lê manobras das apps que marcares aqui. O Waze é só para lançar (a notificação esconde a manobra).</string>
+    <string name="detect_maps">Google Maps</string>
+    <string name="detect_osmand">OsmAnd</string>
+    <string name="detect_comaps">CoMaps</string>
+    <string name="detect_organic">Organic Maps</string>
+
+    <!-- Aviso de programador -->
+    <string name="developer_warn_title">Apenas para testes</string>
+    <string name="developer_warn_body">Estas ferramentas testam a ligação ao relógio e os ícones de manobra. Enviam navegação falsa — deixa-as desligadas no uso normal.</string>
 </resources>

@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Fully-rounded (pill) shape. -->
+    <style name="ShapeAppearance.App.Pill" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">50%</item>
+    </style>
+
+    <!-- One segment of the horizontal tab control: transparent when unchecked,
+         text tinted by the checked state. The sliding indicator behind it supplies
+         the "selected" fill. -->
+    <style name="Widget.App.SegmentedButton" parent="Widget.Material3.Button.TextButton">
+        <item name="shapeAppearanceOverlay">@style/ShapeAppearance.App.Pill</item>
+        <item name="backgroundTint">@android:color/transparent</item>
+        <item name="android:textColor">@color/segmented_button_text</item>
+        <item name="iconTint">@color/segmented_button_text</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="android:fontFamily">sans-serif-condensed</item>
+        <item name="android:insetTop">0dp</item>
+        <item name="android:insetBottom">0dp</item>
+        <item name="android:minWidth">0dp</item>
+        <item name="android:minHeight">44dp</item>
+        <item name="android:paddingStart">4dp</item>
+        <item name="android:paddingEnd">4dp</item>
+    </style>
+</resources>

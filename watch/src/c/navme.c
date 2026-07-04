@@ -3,8 +3,11 @@
 static bool s_invert_color = false; // false = dark theme, true = light theme
 static GColor s_bg_color;
 static bool s_backlight_always_on = false;
+static bool s_backlight_forced_on = false;
 
 #define NAV_SCREEN_BG GColorFromRGB(0xFF, 0x4B, 0x49)  // Solid Red (#ff4b49)
+#define PERSIST_KEY_FAV_COUNT 100
+#define PERSIST_KEY_FAVORITES 101
 
 static GColor prv_top_bg(void) {
 #if defined(PBL_COLOR)
@@ -112,15 +115,13 @@ static void prv_set_waiting_text(void) {
 typedef struct {
   char name[32];
   bool active;
+  uint8_t icon;
 } FavoriteDestination;
 static FavoriteDestination s_favorites[5];
 static uint8_t s_fav_count = 0;
 
 static Window *s_favorites_window = NULL;
-static SimpleMenuLayer *s_favorites_menu_layer = NULL;
-static SimpleMenuItem s_menu_items[5];
-static SimpleMenuSection s_menu_sections[1];
-static void prv_update_favorites_menu_data(void);
+static MenuLayer *s_favorites_menu_layer = NULL;
 
 static const uint32_t s_pdc_resource_ids[] = {
   RESOURCE_ID_PDC_ICON_0, RESOURCE_ID_PDC_ICON_1, RESOURCE_ID_PDC_ICON_2, RESOURCE_ID_PDC_ICON_3,
@@ -229,15 +230,21 @@ static void prv_update_backlight(void) {
   }
 
   if (should_enable) {
-    light_enable(true);
+    if (!s_backlight_forced_on) {
+      light_enable(true);
+      s_backlight_forced_on = true;
+    }
 #if defined(PBL_PLATFORM_EMERY)
     light_set_color(GColorRed);
 #endif
   } else {
-    light_enable(false);
+    if (s_backlight_forced_on) {
+      light_enable(false);
+      s_backlight_forced_on = false;
 #if defined(PBL_PLATFORM_EMERY)
-    light_set_color(GColorWhite);
+      light_set_color(GColorWhite);
 #endif
+    }
   }
 }
 
@@ -546,7 +553,7 @@ static void prv_status_bar_update_proc(Layer *layer, GContext *ctx) {
   GRect bounds = layer_get_bounds(layer);
   
   if (s_speed_alert_active) {
-    GColor bg_color = prv_top_fg();
+    GColor bg_color = prv_distance_fg_for_bg(prv_top_bg());
     GColor fg_color = prv_top_bg();
     
     graphics_context_set_fill_color(ctx, bg_color);
@@ -559,55 +566,44 @@ static void prv_status_bar_update_proc(Layer *layer, GContext *ctx) {
     return;
   }
   
-  GColor text_color = prv_top_fg();
+  GColor text_color = prv_distance_fg_for_bg(prv_top_bg());
   graphics_context_set_text_color(ctx, text_color);
   
-  // 1. Draw GPS signal dots on the left
-  int filled_dots = 0;
-  if (strstr(s_gps_text, "Excellent") != NULL) {
-    filled_dots = 3;
-  } else if (strstr(s_gps_text, "Good") != NULL) {
-    filled_dots = 2;
-  } else if (strstr(s_gps_text, "Medium") != NULL || strstr(s_gps_text, "Poor") != NULL) {
-    filled_dots = 1;
-  } else {
-    filled_dots = 0;
-  }
-  
-  int dot_r = 2;
-  int start_x = 8;
-  int start_y = bounds.size.h / 2;
-  
-  graphics_context_set_fill_color(ctx, text_color);
-  graphics_context_set_stroke_color(ctx, text_color);
-  
-  for (int i = 0; i < 3; i++) {
-    int cx = start_x + i * 7;
-    int cy = start_y;
-    if (i < filled_dots) {
-      graphics_fill_circle(ctx, GPoint(cx, cy), dot_r);
-    } else {
-      graphics_draw_circle(ctx, GPoint(cx, cy), dot_r);
-    }
-  }
-  
-  // 2. Draw current clock time
+  // 1. Draw current clock time and ETA (GPS dots removed for cleaner layout)
   static char time_buffer[16];
   clock_copy_time_string(time_buffer, sizeof(time_buffer));
   
   GFont font = fonts_get_system_font(bounds.size.w > 144 ? FONT_KEY_GOTHIC_14_BOLD : FONT_KEY_GOTHIC_14);
   GRect time_rect;
   GRect eta_rect;
+  GTextAlignment time_align = GTextAlignmentCenter;
+  GTextAlignment eta_align = GTextAlignmentRight;
+  const char *draw_eta = s_eta_text;
+
+#if defined(PBL_ROUND)
+  time_rect = GRect(32, (bounds.size.h - 16) / 2 - 1, 46, 16);
+  eta_rect = GRect(102, (bounds.size.h - 16) / 2 - 1, 46, 16);
+  time_align = GTextAlignmentRight;
+  eta_align = GTextAlignmentLeft;
+  if (strncmp(draw_eta, "ETA: ", 5) == 0) {
+    draw_eta += 5;
+  }
+#else
   if (bounds.size.w <= 144) {
     time_rect = GRect(48, (bounds.size.h - 16) / 2 - 1, 36, 16);
     eta_rect = GRect(84, (bounds.size.h - 16) / 2 - 1, 58, 16);
+    time_align = GTextAlignmentCenter;
+    eta_align = GTextAlignmentRight;
   } else {
     time_rect = GRect((bounds.size.w - 60) / 2, (bounds.size.h - 16) / 2 - 1, 60, 16);
     eta_rect = GRect(bounds.size.w - 85, (bounds.size.h - 16) / 2 - 1, 80, 16);
+    time_align = GTextAlignmentCenter;
+    eta_align = GTextAlignmentRight;
   }
+#endif
   
-  graphics_draw_text(ctx, time_buffer, font, time_rect, GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
-  graphics_draw_text(ctx, s_eta_text, font, eta_rect, GTextOverflowModeWordWrap, GTextAlignmentRight, NULL);
+  graphics_draw_text(ctx, time_buffer, font, time_rect, GTextOverflowModeWordWrap, time_align, NULL);
+  graphics_draw_text(ctx, draw_eta, font, eta_rect, GTextOverflowModeWordWrap, eta_align, NULL);
 }
 
 
@@ -822,10 +818,15 @@ static void prv_draw_distance(GContext *ctx, GRect bounds, int offset_x, const c
 static void prv_draw_street(GContext *ctx, GRect bounds, int offset_x, const char *street_text, GColor bg_color, GRect clip_rect) {
   GFont font = fonts_get_system_font(STREET_FONT);
   
+  GTextAlignment alignment = GTextAlignmentLeft;
+#if defined(PBL_ROUND)
+  alignment = GTextAlignmentCenter;
+#endif
+
   // Calculate text size to center it vertically
   GSize size = graphics_text_layout_get_content_size(
     street_text, font, GRect(0, 0, bounds.size.w, bounds.size.h),
-    GTextOverflowModeWordWrap, GTextAlignmentLeft
+    GTextOverflowModeWordWrap, alignment
   );
   
   int y_offset = (bounds.size.h - size.h) / 2;
@@ -839,7 +840,7 @@ static void prv_draw_street(GContext *ctx, GRect bounds, int offset_x, const cha
   grect_clip(&draw_rect, &clip_rect);
   if (draw_rect.size.w > 0 && draw_rect.size.h > 0) {
     graphics_draw_text(ctx, street_text, font, draw_rect,
-                       GTextOverflowModeWordWrap, GTextAlignmentLeft, NULL);
+                       GTextOverflowModeWordWrap, alignment, NULL);
   }
 }
 
@@ -1605,9 +1606,7 @@ static void prv_update_ui(void) {
       // The panel slide owns this change; cancel any in-flight digit morph (#4: digit
       // animation is for same-maneuver countdowns only, not panel transitions — for now).
       prv_dg_stop();
-#endif
-      
-      // Move current active state to prev variables
+#endif      // Move current active state to prev variables
       s_prev_pdc_image = s_active_pdc_image;
       s_prev_maneuver_index = s_anim_prev_maneuver;
       s_prev_has_forwarded = s_last_rendered_has_forwarded;
@@ -1828,7 +1827,10 @@ static void inbox_received_handler(DictionaryIterator *iterator, void *context) 
     if (s_fav_count > 5) s_fav_count = 5;
     for (int i = 0; i < 5; i++) {
       s_favorites[i].active = false;
+      s_favorites[i].icon = 0;
     }
+    persist_write_int(PERSIST_KEY_FAV_COUNT, s_fav_count);
+    persist_write_data(PERSIST_KEY_FAVORITES, s_favorites, sizeof(s_favorites));
     APP_LOG(APP_LOG_LEVEL_DEBUG, "Parsed NAV_FAV_COUNT: %d", s_fav_count);
   }
 
@@ -1840,11 +1842,19 @@ static void inbox_received_handler(DictionaryIterator *iterator, void *context) 
       strncpy(s_favorites[idx].name, fav_name_t->value->cstring, sizeof(s_favorites[idx].name) - 1);
       s_favorites[idx].name[sizeof(s_favorites[idx].name) - 1] = '\0';
       s_favorites[idx].active = true;
-      APP_LOG(APP_LOG_LEVEL_DEBUG, "Parsed favorite %d: %s", idx, s_favorites[idx].name);
+      
+      Tuple *fav_icon_t = dict_find(iterator, MESSAGE_KEY_NAV_FAV_ICON);
+      if (fav_icon_t) {
+        s_favorites[idx].icon = fav_icon_t->value->uint8;
+      } else {
+        s_favorites[idx].icon = 0;
+      }
+      
+      persist_write_data(PERSIST_KEY_FAVORITES, s_favorites, sizeof(s_favorites));
+      APP_LOG(APP_LOG_LEVEL_DEBUG, "Parsed favorite %d: %s, icon: %d", idx, s_favorites[idx].name, s_favorites[idx].icon);
       
       if (s_favorites_window && s_favorites_menu_layer) {
-        prv_update_favorites_menu_data();
-        menu_layer_reload_data(simple_menu_layer_get_menu_layer(s_favorites_menu_layer));
+        menu_layer_reload_data(s_favorites_menu_layer);
       }
     }
   }
@@ -1921,44 +1931,87 @@ static void prv_fav_menu_select_callback(int index, void *context) {
   }
 }
 
-static void prv_update_favorites_menu_data(void) {
-  if (s_fav_count == 0) {
-    s_menu_items[0] = (SimpleMenuItem) {
-      .title = prv_tr("No favourites", "Sem favoritos"),
-      .subtitle = prv_tr("Add one on the phone", "Adicione no telefone"),
-    };
-    s_menu_sections[0] = (SimpleMenuSection) {
-      .title = prv_tr("Favourites", "Favoritos"),
-      .num_items = 1,
-      .items = s_menu_items,
-    };
-  } else {
-    for (int i = 0; i < s_fav_count; i++) {
-      s_menu_items[i] = (SimpleMenuItem) {
-        .title = s_favorites[i].name,
-        .callback = prv_fav_menu_select_callback,
-      };
-    }
-    s_menu_sections[0] = (SimpleMenuSection) {
-      .title = prv_tr("Favourites", "Favoritos"),
-      .num_items = s_fav_count,
-      .items = s_menu_items,
-    };
+static uint16_t prv_get_num_rows(MenuLayer *menu_layer, uint16_t section_index, void *context) {
+  return s_fav_count == 0 ? 1 : s_fav_count;
+}
+
+static int16_t prv_get_cell_height(MenuLayer *menu_layer, MenuIndex *cell_index, void *context) {
+  return 44;
+}
+
+static uint32_t prv_get_fav_resource_id(uint8_t index) {
+  if (index > 105) {
+    index = 0;
   }
+  return RESOURCE_ID_IMAGE_FAV_0 + index;
+}
+
+static void prv_draw_menu_row(GContext *ctx, const Layer *cell_layer, MenuIndex *cell_index, void *context) {
+  GRect bounds = layer_get_bounds(cell_layer);
+  bool is_highlighted = menu_cell_layer_is_highlighted(cell_layer);
+  
+  GColor bg_resolved = prv_resolve_bg_color(s_bg_color);
+  GColor fg_color = prv_distance_fg_for_bg(bg_resolved);
+  
+  if (is_highlighted) {
+    graphics_context_set_fill_color(ctx, fg_color);
+    graphics_fill_rect(ctx, bounds, 0, GCornerNone);
+    graphics_context_set_text_color(ctx, bg_resolved);
+  } else {
+    graphics_context_set_fill_color(ctx, bg_resolved);
+    graphics_fill_rect(ctx, bounds, 0, GCornerNone);
+    graphics_context_set_text_color(ctx, fg_color);
+  }
+  
+  char text[64];
+  GRect text_bounds;
+  if (s_fav_count == 0) {
+    snprintf(text, sizeof(text), "%s", prv_tr("No favourites", "Sem favoritos"));
+    text_bounds = GRect(10, (bounds.size.h - 26) / 2, bounds.size.w - 20, 26);
+  } else {
+    snprintf(text, sizeof(text), "%s", s_favorites[cell_index->row].name);
+    text_bounds = GRect(40, (bounds.size.h - 26) / 2, bounds.size.w - 50, 26);
+    
+    // Draw favorite icon
+    GBitmap *bmp = gbitmap_create_with_resource(prv_get_fav_resource_id(s_favorites[cell_index->row].icon));
+    if (bmp) {
+      graphics_context_set_compositing_mode(ctx, GCompOpSet);
+      graphics_draw_bitmap_in_rect(ctx, bmp, GRect(8, 9, 25, 25));
+      gbitmap_destroy(bmp);
+    }
+  }
+  
+  GFont font = fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD);
+  graphics_draw_text(ctx, text, font, text_bounds, GTextOverflowModeTrailingEllipsis, GTextAlignmentLeft, NULL);
+}
+
+static void prv_menu_select_click(MenuLayer *menu_layer, MenuIndex *cell_index, void *context) {
+  prv_fav_menu_select_callback(cell_index->row, context);
 }
 
 static void prv_favorites_window_load(Window *window) {
   Layer *window_layer = window_get_root_layer(window);
   GRect bounds = layer_get_bounds(window_layer);
   
-  prv_update_favorites_menu_data();
+  s_favorites_menu_layer = menu_layer_create(bounds);
+  menu_layer_set_callbacks(s_favorites_menu_layer, NULL, (MenuLayerCallbacks) {
+    .get_num_rows = prv_get_num_rows,
+    .get_cell_height = prv_get_cell_height,
+    .draw_row = prv_draw_menu_row,
+    .select_click = prv_menu_select_click,
+  });
   
-  s_favorites_menu_layer = simple_menu_layer_create(bounds, window, s_menu_sections, 1, NULL);
-  layer_add_child(window_layer, simple_menu_layer_get_layer(s_favorites_menu_layer));
+  GColor bg_resolved = prv_resolve_bg_color(s_bg_color);
+  GColor fg_color = prv_distance_fg_for_bg(bg_resolved);
+  menu_layer_set_normal_colors(s_favorites_menu_layer, bg_resolved, fg_color);
+  menu_layer_set_highlight_colors(s_favorites_menu_layer, fg_color, bg_resolved);
+  
+  menu_layer_set_click_config_onto_window(s_favorites_menu_layer, window);
+  layer_add_child(window_layer, menu_layer_get_layer(s_favorites_menu_layer));
 }
 
 static void prv_favorites_window_unload(Window *window) {
-  simple_menu_layer_destroy(s_favorites_menu_layer);
+  menu_layer_destroy(s_favorites_menu_layer);
   s_favorites_menu_layer = NULL;
 }
 
@@ -2026,7 +2079,10 @@ static void prv_window_unload(Window *window) {
 #endif
 
   // Reset backlight state when unloading the window
-  light_enable(false);
+  if (s_backlight_forced_on) {
+    light_enable(false);
+    s_backlight_forced_on = false;
+  }
 #if defined(PBL_PLATFORM_EMERY)
   light_set_color(GColorWhite);
 #endif
@@ -2056,6 +2112,19 @@ static void prv_window_unload(Window *window) {
 }
 
 static void prv_init(void) {
+  // Load persisted favorites if they exist
+  if (persist_exists(PERSIST_KEY_FAV_COUNT)) {
+    s_fav_count = persist_read_int(PERSIST_KEY_FAV_COUNT);
+  }
+  if (persist_exists(PERSIST_KEY_FAVORITES)) {
+    int read_bytes = persist_read_data(PERSIST_KEY_FAVORITES, s_favorites, sizeof(s_favorites));
+    if (read_bytes < (int)sizeof(s_favorites)) {
+      for (int i = 0; i < 5; i++) {
+        s_favorites[i].icon = 0;
+      }
+    }
+  }
+
   s_bg_color = NAV_SCREEN_BG;
   s_last_rendered_bg_color = NAV_SCREEN_BG;
   s_window = window_create();
@@ -2078,6 +2147,15 @@ static void prv_init(void) {
   app_message_register_outbox_sent(outbox_sent_handler);
   
   app_message_open(1024, 64);
+
+  // Send request for favorites to Android companion on startup
+  DictionaryIterator *iter;
+  app_message_outbox_begin(&iter);
+  if (iter) {
+    dict_write_uint8(iter, MESSAGE_KEY_NAV_REQUEST_FAVS, 1);
+    app_message_outbox_send();
+    APP_LOG(APP_LOG_LEVEL_DEBUG, "Sent NAV_REQUEST_FAVS (key 16) to phone");
+  }
 
   // Subscribe to minute tick service for the status bar clock
   tick_timer_service_subscribe(MINUTE_UNIT, prv_tick_handler);

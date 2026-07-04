@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Steer — LIGHT. Brand seed is the on-watch red (#FF4B49); the tonal roles
+         below are a Material3 red scheme so the phone app reads as the same product
+         as the watch face. Neutrals/surfaces are left to the Material3 baseline. -->
+    <style name="Base.Theme.Steer" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/steer_light_primary</item>
+        <item name="colorOnPrimary">@color/steer_light_on_primary</item>
+        <item name="colorPrimaryContainer">@color/steer_light_primary_container</item>
+        <item name="colorOnPrimaryContainer">@color/steer_light_on_primary_container</item>
+
+        <item name="colorSecondary">@color/steer_light_primary</item>
+        <item name="colorSecondaryContainer">@color/steer_light_primary_container</item>
+        <item name="colorOnSecondaryContainer">@color/steer_light_on_primary_container</item>
+
+        <item name="colorError">@color/steer_light_primary</item>
+        <item name="colorErrorContainer">@color/steer_light_primary_container</item>
+        <item name="colorOnErrorContainer">@color/steer_light_on_primary_container</item>
+    </style>
+
+    <style name="Theme.Steer" parent="Base.Theme.Steer" />
+</resources>

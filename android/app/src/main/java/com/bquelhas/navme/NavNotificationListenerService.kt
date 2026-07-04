@@ -47,6 +47,8 @@ class NavNotificationListenerService : NotificationListenerService() {
     override fun onNotificationPosted(sbn: StatusBarNotification) {
         val pkg = sbn.packageName
         if (pkg !in NaviParser.SUPPORTED) return
+        // User can narrow which navigators Steer reads (Customization tab). Default = all supported.
+        if (pkg !in NavPrefs.getDetectApps(applicationContext)) return
 
         val extras = sbn.notification.extras
         val title = extras.getCharSequence(Notification.EXTRA_TITLE)?.toString()

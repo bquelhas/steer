@@ -1,15 +1,44 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- PebbleKit talks to the Pebble/Core Devices bridge app on the phone -->
+    <!-- Needed to post the fake Google-Maps navigation notification on Android 13+. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+    <!-- GPS is our speed source for the watch speedometer + speed-limit alert.
+         The navigator (Maps/OsmAnd) has the GPS lock; we passively read the phone's
+         own fused/GPS fixes to compute current speed. FINE for accuracy; COARSE as the
+         graceful-degrade fallback if the user only grants approximate location. -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+
+    <!-- PebbleKit talks to the Pebble/Core Devices bridge app on the phone;
+         the navigator packages are needed so Favorites can detect/launch them
+         (Android 11+ package visibility). -->
     <queries>
         <package android:name="com.getpebble.android.basalt" />
         <package android:name="com.getpebble.android.google" />
+        <package android:name="com.google.android.apps.maps" />
+        <package android:name="com.waze" />
+        <package android:name="net.osmand.plus" />
+        <package android:name="net.osmand" />
+        <package android:name="app.comaps.google" />
+        <package android:name="app.organicmaps" />
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="geo" />
+        </intent>
+        <!-- Resolve apps that can open a .pbw (the Pebble / Core Devices app) so the
+             Developer screen can offer to install the bundled watchapp. -->
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:mimeType="application/octet-stream" />
+        </intent>
     </queries>
 
     <application
         android:allowBackup="true"
-        android:icon="@android:drawable/ic_dialog_map"
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher_round"
         android:label="@string/app_name"
         android:supportsRtl="true"
         android:theme="@style/Theme.Material3.DayNight.NoActionBar">
@@ -22,6 +51,51 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <activity
+            android:name=".FavoritesActivity"
+            android:exported="false"
+            android:label="@string/favorites_title" />
+
+        <activity
+            android:name=".DeveloperActivity"
+            android:exported="false"
+            android:label="@string/developer_title" />
+
+        <activity
+            android:name=".MockNavActivity"
+            android:exported="false"
+            android:label="@string/mock_nav_title" />
+
+        <receiver
+            android:name=".DebugIconReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.bquelhas.navme.SHOW_ICON" />
+            </intent-filter>
+        </receiver>
+
+        <receiver
+            android:name=".MockNavReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.bquelhas.navme.MOCK_NAV" />
+                <action android:name="com.bquelhas.navme.MOCK_NAV_CANCEL" />
+                <action android:name="com.bquelhas.navme.SET_DEBUG" />
+            </intent-filter>
+        </receiver>
+
+        <!-- Shares the bundled watchapp (.pbw), copied to cache, with the Pebble / Core
+             Devices app via a content:// URI so it can be installed from the Developer screen. -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
 
         <service
             android:name=".NavNotificationListenerService"

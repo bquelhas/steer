@@ -4,32 +4,151 @@ import android.content.Context
 import android.util.Log
 import com.getpebble.android.kit.PebbleKit
 import com.getpebble.android.kit.util.PebbleDictionary
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
-/** Sends a [NaviData] to the NavMe watchapp via the Pebble/Core Devices bridge. */
+/**
+ * Sends a [NaviData] to the NavMe watchapp via the Core Devices bridge.
+ *
+ * Data send uses the **legacy/classic PebbleKit** (`PebbleKit.sendDataToPebble`, the
+ * `com.getpebble.action.app.SEND` broadcast). This was re-adopted after PebbleKit2 was found
+ * UNUSABLE for our case: PK2's `DefaultPebbleSender.sendDataToPebble` is a pure relay that returns
+ * whatever verdict Core puts in the reply bundle, and Core rejects every send with
+ * `FailedDifferentAppOpen` whenever its tracked "active app" (`content://coredevices.coreapp.pebblekit/
+ * activeApp/<serial>`) isn't our UUID — which it routinely isn't, because Core's `startAppOnTheWatch`
+ * only flips that record optimistically and does NOT actually foreground the watchapp (verified
+ * on-device 2026-06-26: startAppOnTheWatch=Success yet the very next send still NACKs
+ * FailedDifferentAppOpen). The classic path has NO active-app gate — it broadcasts the AppMessage and
+ * Core forwards it regardless. PebbleNavi (which works reliably on Core) uses ONLY classic PebbleKit
+ * and no PK2 at all; we now mirror that.
+ *
+ * Core handles the classic `SEND` broadcast through its runtime-registered receiver
+ * (`io.rebble.libpebblecommon.pebblekit.classic`); it is dynamically registered so it does not show
+ * up in `pm query-receivers` (manifest-only) — the earlier "zero recipients" reading was that
+ * artifact, not an absent receiver.
+ *
+ * Sends are serialized through a [Mutex] off the caller's thread so concurrent maneuver frames
+ * don't race while building/broadcasting the shared dictionary.
+ */
 object PebbleEmitter {
     private const val TAG = "NavMe/Emitter"
 
+    private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+    private val sendMutex = Mutex()
+
+    /** Legacy connection probe — Core re-exposes the basalt content provider it reads. */
     fun isWatchConnected(context: Context): Boolean =
         try { PebbleKit.isWatchConnected(context) } catch (e: Exception) { false }
 
-    fun sendNav(context: Context, data: NaviData) {
-        val dict = PebbleDictionary().apply {
-            addInt32(NavKeys.NAV_TURN, data.directionId)
-            addUint8(NavKeys.NAV_TEXT_BEGIN, 1)
-            addString(NavKeys.NAV_TEXT, data.instructionText.take(120))
-            addUint8(NavKeys.NAV_TEXT_END, 1)
-            data.gpsAccuracy?.let { addString(NavKeys.NAV_GPS_ACCURACY, it) }
+    /** Serializes one classic PebbleKit send, off the caller's thread. */
+    private fun send(context: Context, label: String, build: (PebbleDictionary) -> Unit) {
+        val appCtx = context.applicationContext
+        scope.launch {
+            sendMutex.withLock {
+                try {
+                    val dict = PebbleDictionary()
+                    build(dict)
+                    PebbleKit.sendDataToPebble(appCtx, NavKeys.WATCH_UUID, dict)
+                    Log.i(TAG, "$label -> sent(classic)")
+                } catch (e: Exception) {
+                    Log.e(TAG, "$label send failed: ${e.message}")
+                }
+            }
         }
-        try {
-            PebbleKit.sendDataToPebble(context, NavKeys.WATCH_UUID, dict)
-            Log.i(TAG, "sent turn=${data.direction} text='${data.instructionText}'")
-        } catch (e: Exception) {
-            Log.e(TAG, "send failed: ${e.message}")
+    }
+
+    fun sendNav(context: Context, data: NaviData, iconBytes: ByteArray? = null) {
+        val label = "sent turn=${data.direction} text='${data.instructionText}'" +
+            (if (data.eta != null) " +eta(${data.eta})" else "") +
+            (if (iconBytes != null) " +icon(${iconBytes.size}B)" else "")
+        send(context, label) { dict ->
+            dict.addInt32(NavKeys.NAV_TURN, data.directionId)
+            dict.addUint8(NavKeys.NAV_TEXT_BEGIN, 1.toByte())
+            dict.addString(NavKeys.NAV_TEXT, data.instructionText.take(120))
+            dict.addUint8(NavKeys.NAV_TEXT_END, 1.toByte())
+            data.gpsAccuracy?.let { dict.addString(NavKeys.NAV_GPS_ACCURACY, it) }
+            data.eta?.let { dict.addString(NavKeys.NAV_ETA, it) }
+            iconBytes?.let { dict.addBytes(NavKeys.NAV_ICON_BITMAP, it) }
+            // Watch background color (0xRRGGBB); watch adapts text contrast by luminance.
+            dict.addUint32(NavKeys.NAV_BG_COLOR, NavPrefs.getBgColor(context) and 0xFFFFFF)
+            // Settings sync: let the watch know whether to buzz on each new maneuver.
+            dict.addUint8(NavKeys.NAV_VIBE_ON_TURN, (if (NavPrefs.isVibeOnTurn(context)) 1 else 0).toByte())
         }
     }
 
     fun sendCancel(context: Context) {
-        val dict = PebbleDictionary().apply { addUint8(NavKeys.NAV_CANCEL, 1) }
-        try { PebbleKit.sendDataToPebble(context, NavKeys.WATCH_UUID, dict) } catch (_: Exception) {}
+        send(context, "cancel") { it.addUint8(NavKeys.NAV_CANCEL, 1.toByte()) }
+    }
+
+    /** Pushes the vibrate-on-turn setting on its own (e.g. right after the user toggles it). */
+    fun sendVibeOnTurn(context: Context) {
+        send(context, "vibeOnTurn") {
+            it.addUint8(NavKeys.NAV_VIBE_ON_TURN, (if (NavPrefs.isVibeOnTurn(context)) 1 else 0).toByte())
+        }
+    }
+
+    /**
+     * Raises (or clears) the speed-limit warning on the watch. When [exceeded] is true the
+     * watch shows an inverted banner + buzzes. Plumbing is ready; a real speed-limit data
+     * source (e.g. OSM maxspeed) would call this — nothing on-device emits it yet.
+     */
+    fun sendSpeedAlert(context: Context, exceeded: Boolean) {
+        send(context, "speedAlert=$exceeded") {
+            it.addUint8(NavKeys.NAV_SPEED_ALERT, (if (exceeded) 1 else 0).toByte())
+        }
+    }
+
+    /**
+     * Pushes the current GPS speed (km/h, 0..255) to the watch speedometer (NAV_SPEED).
+     * Called per GPS fix by [SpeedProvider] while a route is active; [SpeedProvider] de-dups
+     * so this only fires when the value actually changes.
+     */
+    fun sendSpeed(context: Context, kmh: Int) {
+        send(context, "speed=$kmh") {
+            it.addUint8(NavKeys.NAV_SPEED, kmh.coerceIn(0, 255).toByte())
+        }
+    }
+
+    /**
+     * Syncs the saved favorites to the watch so the SELECT button can pick one when nav is
+     * idle. Sends the count first, then one message per favorite carrying its index + name.
+     * The watch echoes a selection back via [NavKeys.NAV_TRIGGER_ROUTE].
+     */
+    fun sendFavorites(context: Context) {
+        val favs = FavoritesStore.all(context)
+        send(context, "favCount=${favs.size}") {
+            it.addUint8(NavKeys.NAV_FAV_COUNT, favs.size.toByte())
+        }
+        favs.forEachIndexed { i, fav ->
+            send(context, "fav[$i]=${fav.label}") {
+                it.addUint8(NavKeys.NAV_FAV_INDEX, i.toByte())
+                it.addString(NavKeys.NAV_FAV_NAME, fav.label.take(32))
+            }
+        }
+    }
+
+    /**
+     * Brings the NavMe watchapp to the foreground on the Pebble (autolaunch).
+     *
+     * Uses the classic `PebbleKit.startAppOnPebble`, the same launch path PebbleNavi uses on Core.
+     * (PK2's `startAppOnTheWatch` returns Success but only flips Core's active-app record without
+     * actually foregrounding the app on the watch, so it never satisfied the send gate.)
+     */
+    fun launchWatchApp(context: Context) {
+        val appCtx = context.applicationContext
+        scope.launch {
+            sendMutex.withLock {
+                try {
+                    PebbleKit.startAppOnPebble(appCtx, NavKeys.WATCH_UUID)
+                    Log.i(TAG, "startAppOnPebble(classic) requested")
+                } catch (e: Exception) {
+                    Log.e(TAG, "startAppOnPebble failed: ${e.message}")
+                }
+            }
+        }
     }
 }

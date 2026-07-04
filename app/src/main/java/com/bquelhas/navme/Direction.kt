@@ -1,12 +1,14 @@
 package com.bquelhas.navme
 
+import androidx.annotation.DrawableRes
+
 /**
  * Maneuver taxonomy shared with the Pebble watchapp. The integer id is the value
  * sent in NAV_TURN and indexes the watch's `direction_resources[]` icon table.
  *
- * Ids 0..37 are the original NavMe icon set (Google/Pebble `DA_TURN_*`).
- * Ids 38..40 are additions (FERRY, KEEP_LEFT, KEEP_RIGHT) with no dedicated icon
- * yet — the watch falls back to a generic arrow until assets are drawn.
+ * Ids 0..40 all have a dedicated icon, drawn by Bruno (mockup) and shared between
+ * the watch (PDC) and this app (VectorDrawable `ic_maneuver_<id>`). The Android
+ * vectors are generated from the same source SVGs so the preview matches the watch.
  *
  * NEVER reorder existing ids; only append. The Pebble C enum must match exactly.
  */
@@ -25,7 +27,30 @@ enum class Direction(val id: Int) {
     // --- additions (no dedicated watch icon yet) ---
     FERRY(38), KEEP_LEFT(39), KEEP_RIGHT(40);
 
+    /** VectorDrawable that mirrors the watch's PDC icon for this maneuver. */
+    @get:DrawableRes
+    val iconRes: Int
+        get() = ICON_RES[id]
+
     companion object {
         fun fromId(id: Int): Direction = entries.firstOrNull { it.id == id } ?: STRAIGHT
+
+        // Indexed by Direction.id (0..40). Generated set: ic_maneuver_<id>.xml
+        private val ICON_RES = intArrayOf(
+            R.drawable.ic_maneuver_0, R.drawable.ic_maneuver_1, R.drawable.ic_maneuver_2,
+            R.drawable.ic_maneuver_3, R.drawable.ic_maneuver_4, R.drawable.ic_maneuver_5,
+            R.drawable.ic_maneuver_6, R.drawable.ic_maneuver_7, R.drawable.ic_maneuver_8,
+            R.drawable.ic_maneuver_9, R.drawable.ic_maneuver_10, R.drawable.ic_maneuver_11,
+            R.drawable.ic_maneuver_12, R.drawable.ic_maneuver_13, R.drawable.ic_maneuver_14,
+            R.drawable.ic_maneuver_15, R.drawable.ic_maneuver_16, R.drawable.ic_maneuver_17,
+            R.drawable.ic_maneuver_18, R.drawable.ic_maneuver_19, R.drawable.ic_maneuver_20,
+            R.drawable.ic_maneuver_21, R.drawable.ic_maneuver_22, R.drawable.ic_maneuver_23,
+            R.drawable.ic_maneuver_24, R.drawable.ic_maneuver_25, R.drawable.ic_maneuver_26,
+            R.drawable.ic_maneuver_27, R.drawable.ic_maneuver_28, R.drawable.ic_maneuver_29,
+            R.drawable.ic_maneuver_30, R.drawable.ic_maneuver_31, R.drawable.ic_maneuver_32,
+            R.drawable.ic_maneuver_33, R.drawable.ic_maneuver_34, R.drawable.ic_maneuver_35,
+            R.drawable.ic_maneuver_36, R.drawable.ic_maneuver_37, R.drawable.ic_maneuver_38,
+            R.drawable.ic_maneuver_39, R.drawable.ic_maneuver_40,
+        )
     }
 }

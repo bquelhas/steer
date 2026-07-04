@@ -30,13 +30,35 @@ android {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
-    kotlinOptions {
-        jvmTarget = "11"
+}
+
+kotlin {
+    compilerOptions {
+        jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11
     }
+}
+
+// Bundle the companion watchapp (.pbw) into the APK's assets so the Developer screen can
+// hand it to the Pebble / Core Devices app for install ("o pbw que vai com o apk"). The file
+// is copied from the watch project's build output before assets are merged; if the watch
+// hasn't been built yet the step is skipped gracefully instead of failing the Android build.
+val watchPbw = file("${rootProject.projectDir}/../../projetos/Nav-app/build/Nav-app.pbw")
+val bundleWatchPbw = tasks.register<Copy>("bundleWatchPbw") {
+    from(watchPbw)
+    into(layout.projectDirectory.dir("src/main/assets"))
+    rename { "steer.pbw" }
+    onlyIf { watchPbw.exists() }
+}
+tasks.matching { it.name.startsWith("merge") && it.name.endsWith("Assets") }.configureEach {
+    dependsOn(bundleWatchPbw)
 }
 
 dependencies {
     implementation("com.getpebble:pebblekit:4.0.1")
+    // PebbleKit2 (Core Devices) — used only for autolaunch (startAppOnTheWatch); data
+    // send stays on the legacy lib above, which Core's classic compat still handles.
+    implementation("io.rebble.pebblekit2:client:1.2.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.material)

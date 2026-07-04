@@ -243,22 +243,42 @@ class MainActivity : AppCompatActivity() {
             if (checked) ensureLocationPermission()
         }
 
-        val limitInput = root.findViewById<TextInputEditText>(R.id.speedLimitInput)
-        limitInput.setText(NavPrefs.getSpeedLimit(applicationContext).toString())
-        limitInput.setOnFocusChangeListener { _, hasFocus ->
-            if (!hasFocus) commitSpeedLimit(limitInput)
+        // Limit source: Manual (fixed preset) vs OSM (real road limit, uses data).
+        val sourceToggle = root.findViewById<MaterialButtonToggleGroup>(R.id.speedSourceToggle)
+        val osmNote = root.findViewById<TextView>(R.id.speedOsmNote)
+        sourceToggle.check(
+            if (NavPrefs.isOsmSpeedLimit(applicationContext)) R.id.sourceOsm else R.id.sourceManual
+        )
+        osmNote.visibility = if (NavPrefs.isOsmSpeedLimit(applicationContext)) View.VISIBLE else View.GONE
+        sourceToggle.addOnButtonCheckedListener { _, buttonId, isChecked ->
+            if (!isChecked) return@addOnButtonCheckedListener
+            val osm = buttonId == R.id.sourceOsm
+            NavPrefs.setOsmSpeedLimit(applicationContext, osm)
+            osmNote.visibility = if (osm) View.VISIBLE else View.GONE
+        }
+
+        // Manual limit presets (also the OSM fallback).
+        val limitToggle = root.findViewById<MaterialButtonToggleGroup>(R.id.speedLimitToggle)
+        limitToggle.check(presetButtonFor(NavPrefs.getSpeedLimit(applicationContext)))
+        limitToggle.addOnButtonCheckedListener { _, buttonId, isChecked ->
+            if (!isChecked) return@addOnButtonCheckedListener
+            NavPrefs.setSpeedLimit(applicationContext, presetValueFor(buttonId))
         }
 
         btnGrantLocation?.setOnClickListener { ensureLocationPermission() }
         updateSpeedControls()
     }
 
-    private fun commitSpeedLimit(input: TextInputEditText) {
-        val kmh = input.text?.toString()?.toIntOrNull()
-        if (kmh != null && kmh in 1..255) {
-            NavPrefs.setSpeedLimit(applicationContext, kmh)
-        }
-        input.setText(NavPrefs.getSpeedLimit(applicationContext).toString())
+    private fun presetButtonFor(kmh: Int): Int = when (kmh) {
+        100 -> R.id.limit100
+        130 -> R.id.limit130
+        else -> R.id.limit120
+    }
+
+    private fun presetValueFor(buttonId: Int): Int = when (buttonId) {
+        R.id.limit100 -> 100
+        R.id.limit130 -> 130
+        else -> 120
     }
 
     private fun ensureLocationPermission() {

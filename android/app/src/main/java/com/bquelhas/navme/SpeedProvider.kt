@@ -38,6 +38,7 @@ object SpeedProvider {
 
     private var lastSentSpeed = -1
     private var alertActive = false
+    private var lastLimit = NavPrefs.DEFAULT_SPEED_LIMIT
 
     fun hasLocationPermission(context: Context): Boolean =
         ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) ==
@@ -96,25 +97,38 @@ object SpeedProvider {
         listener = null
         running = false
         if (alertActive) {
-            PebbleEmitter.sendSpeedAlert(context, false)
+            PebbleEmitter.sendSpeedAlert(context, false, lastLimit)
             alertActive = false
         }
+        OsmSpeedLimit.reset()
         lastSentSpeed = -1
         Log.i(TAG, "stopped")
     }
 
     private fun handleFix(context: Context, location: Location) {
         if (!location.hasSpeed()) return
+        val limit = effectiveLimit(context, location)
         val kmh = Math.round(location.speed * 3.6f)
         if (kmh < MIN_VALID_SPEED_KMH) {
             // Treat as stationary: report 0 once so the watch face zeroes out.
             maybeSendSpeed(context, 0)
-            updateAlert(context, 0)
+            updateAlert(context, 0, limit)
             return
         }
         val clamped = kmh.coerceIn(0, 255)
         maybeSendSpeed(context, clamped)
-        updateAlert(context, clamped)
+        updateAlert(context, clamped, limit)
+    }
+
+    /**
+     * The limit to enforce right now: the road's real OSM maxspeed in OSM mode (falling back to the
+     * manual limit when OSM has no answer yet / offline), or the manual limit in Manual mode.
+     */
+    private fun effectiveLimit(context: Context, location: Location): Int {
+        val manual = NavPrefs.getSpeedLimit(context)
+        if (!NavPrefs.isOsmSpeedLimit(context)) return manual
+        OsmSpeedLimit.maybeRefresh(location.latitude, location.longitude)
+        return OsmSpeedLimit.currentLimit() ?: manual
     }
 
     private fun maybeSendSpeed(context: Context, kmh: Int) {
@@ -124,20 +138,20 @@ object SpeedProvider {
         PebbleEmitter.sendSpeed(context, kmh)
     }
 
-    private fun updateAlert(context: Context, kmh: Int) {
+    private fun updateAlert(context: Context, kmh: Int, limit: Int) {
         if (!NavPrefs.isSpeedAlert(context)) {
             if (alertActive) {
-                PebbleEmitter.sendSpeedAlert(context, false)
+                PebbleEmitter.sendSpeedAlert(context, false, limit)
                 alertActive = false
             }
             return
         }
-        val limit = NavPrefs.getSpeedLimit(context)
+        lastLimit = limit
         val exceeded = if (alertActive) kmh > (limit - ALERT_HYSTERESIS_KMH)
                        else kmh > limit
         if (exceeded != alertActive) {
             alertActive = exceeded
-            PebbleEmitter.sendSpeedAlert(context, exceeded)
+            PebbleEmitter.sendSpeedAlert(context, exceeded, limit)
         }
     }
 }

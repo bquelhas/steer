@@ -101,13 +101,16 @@ object PebbleEmitter {
     }
 
     /**
-     * Raises (or clears) the speed-limit warning on the watch. When [exceeded] is true the
-     * watch shows an inverted banner + buzzes. Plumbing is ready; a real speed-limit data
-     * source (e.g. OSM maxspeed) would call this — nothing on-device emits it yet.
+     * Raises (or clears) the speed-limit warning on the watch. When [exceeded] is true the watch
+     * takes over the whole screen with a speed-limit sign showing [limitKmh] + one long vibration;
+     * when false it returns to the normal nav layout. Driven live by [SpeedProvider] from the GPS
+     * speed vs. the effective limit (manual preset or OSM road maxspeed). The limit is sent on both
+     * edges so the sign always has a value to draw.
      */
-    fun sendSpeedAlert(context: Context, exceeded: Boolean) {
-        send(context, "speedAlert=$exceeded") {
+    fun sendSpeedAlert(context: Context, exceeded: Boolean, limitKmh: Int) {
+        send(context, "speedAlert=$exceeded limit=$limitKmh") {
             it.addUint8(NavKeys.NAV_SPEED_ALERT, (if (exceeded) 1 else 0).toByte())
+            it.addUint8(NavKeys.NAV_SPEED_LIMIT, limitKmh.coerceIn(0, 255).toByte())
         }
     }
 

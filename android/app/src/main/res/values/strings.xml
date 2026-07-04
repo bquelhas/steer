@@ -19,6 +19,10 @@
     <string name="speedometer_label">Show speed on the watch</string>
     <string name="speed_alert_label">Alert when exceeding the limit</string>
     <string name="speed_limit_label">Speed limit (km/h)</string>
+    <string name="speed_source_label">Limit source</string>
+    <string name="speed_source_manual">Manual</string>
+    <string name="speed_source_osm">OSM</string>
+    <string name="speed_osm_note">OSM uses mobile data to read each road\'s real limit. Off = fixed manual limit, no network.</string>
     <string name="speed_perm_needed">Grant location access to use speed</string>
     <string name="speed_grant_perm">Allow location</string>
     <string name="section_navigation">Navigation</string>

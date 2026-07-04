@@ -205,22 +205,90 @@
             android:textAppearance="?attr/textAppearanceBodyLarge"
             android:text="@string/speed_alert_label" />
 
-        <com.google.android.material.textfield.TextInputLayout
-            android:id="@+id/speedLimitLayout"
+        <!-- Limit source: Manual (fixed preset, no network) vs OSM (real road limit, uses data). -->
+        <LinearLayout
+            android:id="@+id/speedSourceRow"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="4dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:fontFamily="sans-serif-condensed"
+                android:textAppearance="?attr/textAppearanceBodyLarge"
+                android:text="@string/speed_source_label" />
+
+            <com.google.android.material.button.MaterialButtonToggleGroup
+                android:id="@+id/speedSourceToggle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:singleSelection="true"
+                app:selectionRequired="true">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/sourceManual"
+                    style="?attr/materialButtonOutlinedStyle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/speed_source_manual" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/sourceOsm"
+                    style="?attr/materialButtonOutlinedStyle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/speed_source_osm" />
+            </com.google.android.material.button.MaterialButtonToggleGroup>
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/speedOsmNote"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="10dp"
+            android:fontFamily="sans-serif-condensed"
+            android:textAppearance="?attr/textAppearanceBodySmall"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            android:visibility="gone"
+            android:text="@string/speed_osm_note" />
+
+        <!-- Manual limit presets (common highway maximums); also the OSM fallback. -->
+        <com.google.android.material.button.MaterialButtonToggleGroup
+            android:id="@+id/speedLimitToggle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="12dp"
-            android:hint="@string/speed_limit_label"
-            style="@style/Widget.Material3.TextInputLayout.OutlinedBox">
+            app:singleSelection="true"
+            app:selectionRequired="true">
 
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/speedLimitInput"
-                android:layout_width="match_parent"
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/limit100"
+                style="?attr/materialButtonOutlinedStyle"
+                android:layout_width="0dp"
+                android:layout_weight="1"
                 android:layout_height="wrap_content"
-                android:fontFamily="sans-serif-condensed"
-                android:inputType="number"
-                android:maxLength="3" />
-        </com.google.android.material.textfield.TextInputLayout>
+                android:text="100" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/limit120"
+                style="?attr/materialButtonOutlinedStyle"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:text="120" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/limit130"
+                style="?attr/materialButtonOutlinedStyle"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:text="130" />
+        </com.google.android.material.button.MaterialButtonToggleGroup>
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnGrantLocation"

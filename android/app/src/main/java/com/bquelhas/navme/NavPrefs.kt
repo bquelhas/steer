@@ -12,6 +12,7 @@ object NavPrefs {
     private const val KEY_SPEEDOMETER = "speedometer"
     private const val KEY_SPEED_ALERT = "speed_alert"
     private const val KEY_SPEED_LIMIT = "speed_limit"
+    private const val KEY_SPEED_LIMIT_OSM = "speed_limit_osm"
     private const val KEY_UNITS = "units"
     private const val KEY_NAV_APP = "nav_app"
     private const val KEY_DETECT_APPS = "detect_apps"
@@ -21,6 +22,9 @@ object NavPrefs {
 
     /** Default manual speed limit (km/h) for the speed-limit alert. */
     const val DEFAULT_SPEED_LIMIT = 120
+
+    /** Quick presets for the manual limit — the common highway maximums. */
+    val SPEED_LIMIT_PRESETS = listOf(100, 120, 130)
 
     private fun prefs(context: Context) =
         context.getSharedPreferences(FILE, Context.MODE_PRIVATE)
@@ -75,8 +79,8 @@ object NavPrefs {
 
     /**
      * Whether the speed-limit alert is on — when true, [SpeedProvider] compares the GPS speed
-     * against [getSpeedLimit] and raises the watch warning banner (NAV_SPEED_ALERT) when over.
-     * Default OFF (opt-in, needs location permission).
+     * against the effective limit (manual or OSM) and raises the watch full-screen speed-limit
+     * sign (NAV_SPEED_ALERT + NAV_SPEED_LIMIT) when over. Default OFF (opt-in, needs location).
      */
     fun isSpeedAlert(context: Context): Boolean =
         prefs(context).getBoolean(KEY_SPEED_ALERT, false)
@@ -85,12 +89,27 @@ object NavPrefs {
         prefs(context).edit().putBoolean(KEY_SPEED_ALERT, enabled).apply()
     }
 
-    /** Manual speed limit (km/h) for the speed-limit alert. */
+    /**
+     * Manual speed limit (km/h). Used directly in Manual mode, and as the fallback in OSM mode
+     * when the road's real maxspeed can't be resolved (no coverage / offline).
+     */
     fun getSpeedLimit(context: Context): Int =
         prefs(context).getInt(KEY_SPEED_LIMIT, DEFAULT_SPEED_LIMIT)
 
     fun setSpeedLimit(context: Context, kmh: Int) {
         prefs(context).edit().putInt(KEY_SPEED_LIMIT, kmh.coerceIn(1, 255)).apply()
+    }
+
+    /**
+     * Speed-limit source. When true the alert uses the current road's real limit fetched from
+     * OpenStreetMap (Overpass `maxspeed`) — this costs a little mobile data — instead of the fixed
+     * manual limit above. Default false (Manual, zero network).
+     */
+    fun isOsmSpeedLimit(context: Context): Boolean =
+        prefs(context).getBoolean(KEY_SPEED_LIMIT_OSM, false)
+
+    fun setOsmSpeedLimit(context: Context, enabled: Boolean) {
+        prefs(context).edit().putBoolean(KEY_SPEED_LIMIT_OSM, enabled).apply()
     }
 
     /**

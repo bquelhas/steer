@@ -31,7 +31,9 @@ object NavKeys {
                                     // only buzzes on a new maneuver when this is 1. Sent with each
                                     // nav frame and immediately when the user toggles the setting.
     const val NAV_SPEED_ALERT = 10  // uint8: 0 normal / 1 speed limit exceeded. When 1 the watch
-                                    // shows an inverted warning banner in the status bar + vibrates.
+                                    // takes over the WHOLE screen with a speed-limit sign (see
+                                    // NAV_SPEED_LIMIT) + a single long vibration; clears back to the
+                                    // normal nav layout when it returns to 0.
     const val NAV_FAV_COUNT = 11    // uint8: total number of favorites being synced to the watch.
     const val NAV_FAV_INDEX = 12    // uint8: index (0..count-1) of the favorite in the message.
     const val NAV_FAV_NAME = 13     // cstring: display name of the favorite at NAV_FAV_INDEX.
@@ -49,5 +51,9 @@ object NavKeys {
                                     // from the shared fav_icons.tsv manifest (0 = generic pin). Sent
                                     // in the same message as the favorite's index + name; the watch
                                     // draws the matching 25x25 glyph in its favorites menu.
+    const val NAV_SPEED_LIMIT = 18  // uint8: the speed limit (km/h) to draw inside the full-screen
+                                    // speed-limit sign. Sent together with NAV_SPEED_ALERT. The value
+                                    // is either the user's manual limit or, in OSM mode, the current
+                                    // road's real maxspeed (falling back to the manual limit).
     const val NAV_CANCEL = 99       // uint8: navigation stopped / clear display
 }

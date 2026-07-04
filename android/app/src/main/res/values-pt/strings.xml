@@ -19,6 +19,10 @@
     <string name="speedometer_label">Mostrar velocidade no relógio</string>
     <string name="speed_alert_label">Alertar quando exceder o limite</string>
     <string name="speed_limit_label">Limite de velocidade (km/h)</string>
+    <string name="speed_source_label">Fonte do limite</string>
+    <string name="speed_source_manual">Manual</string>
+    <string name="speed_source_osm">OSM</string>
+    <string name="speed_osm_note">O OSM usa dados móveis para ler o limite real de cada estrada. Desligado = limite manual fixo, sem rede.</string>
     <string name="speed_perm_needed">Concede acesso à localização para usar a velocidade</string>
     <string name="speed_grant_perm">Permitir localização</string>
     <string name="section_navigation">Navegação</string>

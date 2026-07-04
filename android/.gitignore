@@ -1,0 +1,25 @@
+*.iml
+.gradle/
+/local.properties
+/.idea/
+.DS_Store
+/build/
+/captures/
+.externalNativeBuild/
+.cxx/
+local.properties
+**/build/
+.kotlin/
+
+# Signing material — never commit
+*.jks
+*.keystore
+keystore.properties
+
+# Bundled watch binary — a build artifact regenerated from the watch project
+# by the bundleWatchPbw Gradle task. Not source.
+app/src/main/assets/*.pbw
+
+# Google Maps maneuver reference artwork — Google's proprietary artwork, used
+# only by the debug-only MockNav auditing tool. Must NOT be redistributed.
+app/src/debug/assets/gmaps_maneuvers/

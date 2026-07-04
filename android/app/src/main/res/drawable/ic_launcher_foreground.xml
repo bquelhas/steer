@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Steer launcher foreground: the Pebble "car rental" line-art, white strokes, so the
+     Android app icon matches the watchapp's menu/waiting icon. The 80x80 art is scaled to
+     0.75 and centred inside the 108x108 adaptive viewport (stays within the safe zone). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <group
+        android:translateX="24"
+        android:translateY="24"
+        android:scaleX="0.75"
+        android:scaleY="0.75">
+
+        <!-- Heavier 4px strokes: body, wheels, sills, ground line. -->
+        <path
+            android:strokeColor="#FFFFFF"
+            android:strokeWidth="4"
+            android:strokeLineCap="round"
+            android:strokeLineJoin="round"
+            android:pathData="M25,47 L22,59 L14,57 L17,45
+                              M61,56 L58,68 L50,66 L53,54
+                              M22,25 L35,7 L63,14 L66,36 L70,37 L65,57 L13,44 L18,24 Z
+                              M74,74 L6,74
+                              M66,36 L22,25
+                              M35,41 L47,44
+                              M22,25 L15,19
+                              M75,34 L66,36" />
+
+        <!-- Lighter 3px strokes: roof line and small detail chevrons. -->
+        <path
+            android:strokeColor="#FFFFFF"
+            android:strokeWidth="3"
+            android:strokeLineCap="round"
+            android:strokeLineJoin="round"
+            android:pathData="M61.5,19.5 L33.5,12.5
+                              M68,45 L56,42 L58,34
+                              M30,27 L28,35 L16,32" />
+    </group>
+</vector>

@@ -794,6 +794,26 @@
           "type": "bitmap",
           "name": "IMAGE_FAV_105",
           "file": "fav_icons/fav_105.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "IMAGE_MODE_CAR",
+          "file": "mode_icons/mode_car.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "IMAGE_MODE_BIKE",
+          "file": "mode_icons/mode_bike.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "IMAGE_MODE_WALK",
+          "file": "mode_icons/mode_walk.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "IMAGE_MODE_TRANSIT",
+          "file": "mode_icons/mode_transit.png"
         }
       ]
     }

@@ -2021,31 +2021,31 @@ static void prv_mode_draw_row(GContext *ctx, const Layer *cell_layer, MenuIndex 
   }
   
   const char *text = "";
-  uint32_t placeholder_res_id = 0;
+  uint32_t res_id = 0;
   
   switch (cell_index->row) {
     case 0:
       text = prv_tr("Car", "Carro");
-      placeholder_res_id = RESOURCE_ID_IMAGE_FAV_102; // Waze / Car placeholder
+      res_id = RESOURCE_ID_IMAGE_MODE_CAR;
       break;
     case 1:
       text = prv_tr("Bicycle", "Bicicleta");
-      placeholder_res_id = RESOURCE_ID_IMAGE_FAV_83;  // Sports placeholder
+      res_id = RESOURCE_ID_IMAGE_MODE_BIKE;
       break;
     case 2:
       text = prv_tr("Walk", "A pé");
-      placeholder_res_id = RESOURCE_ID_IMAGE_FAV_85;  // Steps placeholder
+      res_id = RESOURCE_ID_IMAGE_MODE_WALK;
       break;
     case 3:
       text = prv_tr("Transit", "Transporte");
-      placeholder_res_id = RESOURCE_ID_IMAGE_FAV_0;   // Pin placeholder
+      res_id = RESOURCE_ID_IMAGE_MODE_TRANSIT;
       break;
   }
   
   GRect text_bounds = GRect(40, (bounds.size.h - 26) / 2, bounds.size.w - 50, 26);
   
-  // Draw placeholder icon
-  GBitmap *bmp = gbitmap_create_with_resource(placeholder_res_id);
+  // Draw icon
+  GBitmap *bmp = gbitmap_create_with_resource(res_id);
   if (bmp) {
     graphics_context_set_compositing_mode(ctx, GCompOpSet);
     graphics_draw_bitmap_in_rect(ctx, bmp, GRect(8, 9, 25, 25));

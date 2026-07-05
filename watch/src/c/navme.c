@@ -94,7 +94,7 @@ static uint8_t s_speed_limit = 0;
 static int s_current_speed = -1;   // current speed in km/h from the phone GPS; -1 = unknown
 // Speedometer display placement is still TBD (Bruno designs the layout). The value is
 // plumbed + stored now; flip this to 1 once the on-watch layout is decided.
-#define STEER_SHOW_SPEEDOMETER 0
+#define STEER_SHOW_SPEEDOMETER 1
 
 // --- Localization ---------------------------------------------------------
 // English is the default UI language; Portuguese is selected automatically when
@@ -147,7 +147,11 @@ static GDrawCommandImage *s_active_pdc_image = NULL;
 // (s_maneuver_index < 0). Loaded + content-fitted once at window load.
 static GDrawCommandImage *s_wait_pdc_image = NULL;
 
+#if defined(PBL_PLATFORM_APLITE)
+static uint8_t s_forwarded_icon_bytes[1];
+#else
 static uint8_t s_forwarded_icon_bytes[384];
+#endif
 static bool s_has_forwarded_icon = false;
 static GBitmap *s_forwarded_icon = NULL;
 static bool s_forwarded_icon_dirty = false;
@@ -186,7 +190,11 @@ static GColor s_last_rendered_bg_color;
 
 // Variables for transition tracking
 static GDrawCommandImage *s_prev_pdc_image = NULL;
+#if defined(PBL_PLATFORM_APLITE)
+static uint8_t s_prev_forwarded_icon_bytes[1];
+#else
 static uint8_t s_prev_forwarded_icon_bytes[384];
+#endif
 static int s_prev_maneuver_index = -2;
 static bool s_prev_has_forwarded = false;
 static char s_prev_distance_text[16] = "";
@@ -746,6 +754,12 @@ static void prv_draw_leco_char(GContext *ctx, char c, GPoint origin, int block_w
     case 'T': case 't':
       rows[0] = 0b111; rows[1] = 0b010; rows[2] = 0b010; rows[3] = 0b010; rows[4] = 0b010;
       break;
+    case 'H': case 'h':
+      rows[0] = 0b101; rows[1] = 0b101; rows[2] = 0b111; rows[3] = 0b101; rows[4] = 0b101;
+      break;
+    case '/':
+      rows[0] = 0b001; rows[1] = 0b001; rows[2] = 0b010; rows[3] = 0b100; rows[4] = 0b100;
+      break;
     default:
       return;
   }
@@ -1165,6 +1179,84 @@ static void prv_dg_start(const char *old_text, const char *new_text) {
 }
 #endif // PBL_COLOR
 
+static void prv_draw_speedometer(GContext *ctx, GRect bounds, GColor bg_color, GRect clip_rect) {
+  if (s_current_speed < 0) {
+    return;
+  }
+  
+  char speed_buf[16];
+  snprintf(speed_buf, sizeof(speed_buf), "%d", s_current_speed);
+  
+  GColor text_color = prv_distance_fg_for_bg(bg_color);
+  graphics_context_set_text_color(ctx, text_color);
+  graphics_context_set_fill_color(ctx, text_color);
+  
+  GFont chosen_font = fonts_get_system_font(FONT_KEY_LECO_20_BOLD_NUMBERS);
+  const char* font_keys[] = {
+    FONT_KEY_LECO_42_NUMBERS,
+    FONT_KEY_LECO_38_BOLD_NUMBERS,
+    FONT_KEY_LECO_36_BOLD_NUMBERS,
+    FONT_KEY_LECO_32_BOLD_NUMBERS,
+    FONT_KEY_LECO_28_LIGHT_NUMBERS,
+    FONT_KEY_LECO_20_BOLD_NUMBERS
+  };
+  
+  int max_allowed_w = (int)(bounds.size.w * 0.85);
+  int num_h = 20; // default height fallback
+  
+  for (size_t i = 0; i < sizeof(font_keys)/sizeof(font_keys[0]); i++) {
+    GFont f = fonts_get_system_font(font_keys[i]);
+    GSize size = graphics_text_layout_get_content_size(speed_buf, f, bounds, 
+                                                      GTextOverflowModeWordWrap, GTextAlignmentCenter);
+    if (size.w <= max_allowed_w) {
+      chosen_font = f;
+      if (i == 0) num_h = 42;
+      else if (i == 1) num_h = 38;
+      else if (i == 2) num_h = 36;
+      else if (i == 3) num_h = 32;
+      else if (i == 4) num_h = 28;
+      else num_h = 20;
+      break;
+    }
+  }
+  
+  // Set block size based on platform
+#if defined(PBL_PLATFORM_EMERY)
+  int block_w = 4;
+  int block_h = 4;
+  int spacing = 3;
+  int gap = 6;
+#else
+  int block_w = 2;
+  int block_h = 2;
+  int spacing = 1;
+  int gap = 4;
+#endif
+
+  int unit_len = 4; // "KM/H" length is 4
+  int unit_w = unit_len * 3 * block_w + (unit_len - 1) * spacing;
+  
+  // Calculate total height of speedometer (number height + gap + 5 blocks height)
+  int total_h = num_h + gap + 5 * block_h;
+  int y_offset = (bounds.size.h - total_h) / 2;
+  if (y_offset < 0) {
+    y_offset = 0;
+  }
+  
+  // Draw speed number centered horizontally
+  GRect num_rect = GRect(bounds.origin.x, bounds.origin.y + y_offset, bounds.size.w, num_h + 4);
+  grect_clip(&num_rect, &clip_rect);
+  if (num_rect.size.w > 0 && num_rect.size.h > 0) {
+    graphics_draw_text(ctx, speed_buf, chosen_font, num_rect, 
+                       GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
+  }
+  
+  // Draw km/h unit centered horizontally below number
+  int start_x = bounds.origin.x + (bounds.size.w - unit_w) / 2;
+  int start_y = bounds.origin.y + y_offset + num_h + gap;
+  prv_draw_leco_string(ctx, "KM/H", GPoint(start_x, start_y), block_w, block_h, spacing, clip_rect);
+}
+
 static void prv_panel_update_proc(Layer *layer, GContext *ctx) {
   GRect bounds = layer_get_bounds(layer);
   int w = bounds.size.w;
@@ -1222,7 +1314,11 @@ static void prv_panel_update_proc(Layer *layer, GContext *ctx) {
 
     prv_draw_icon(ctx, old_icon_rect, 0, s_prev_has_forwarded, s_prev_forwarded_icon_bytes, s_prev_pdc_image, s_prev_maneuver_index, 100);
     prv_draw_distance(ctx, old_dist_rect, 0, s_prev_distance_text, old_bg_resolved, old_bounds);
-    prv_draw_street(ctx, old_street_rect, 0, s_prev_street_text, old_bg_resolved, old_bounds);
+    if (STEER_SHOW_SPEEDOMETER && s_current_speed >= 0) {
+      prv_draw_speedometer(ctx, old_street_rect, old_bg_resolved, old_bounds);
+    } else {
+      prv_draw_street(ctx, old_street_rect, 0, s_prev_street_text, old_bg_resolved, old_bounds);
+    }
 
     // 2. New card enters with staggered layers: background leads, icon then text trail.
     //    Each element is clipped to the new background rect so text/icon emerge from it.
@@ -1237,7 +1333,11 @@ static void prv_panel_update_proc(Layer *layer, GContext *ctx) {
 
     prv_draw_icon(ctx, new_icon_rect, 0, s_has_forwarded_icon, s_forwarded_icon_bytes, s_active_pdc_image, s_maneuver_index, 100);
     prv_draw_distance(ctx, new_dist_rect, 0, s_distance_text, new_bg_resolved, new_bounds);
-    prv_draw_street(ctx, new_street_rect, 0, s_street_text, new_bg_resolved, new_bounds);
+    if (STEER_SHOW_SPEEDOMETER && s_current_speed >= 0) {
+      prv_draw_speedometer(ctx, new_street_rect, new_bg_resolved, new_bounds);
+    } else {
+      prv_draw_street(ctx, new_street_rect, 0, s_street_text, new_bg_resolved, new_bounds);
+    }
   } else {
     // IDLE
     GColor bg_resolved = prv_resolve_bg_color(s_bg_color);
@@ -1259,7 +1359,11 @@ static void prv_panel_update_proc(Layer *layer, GContext *ctx) {
       prv_dg_draw_morph(ctx, DISTANCE_RELATIVE_RECT, bg_resolved);
     }
 #endif
-    prv_draw_street(ctx, STREET_RELATIVE_RECT, 0, s_street_text, bg_resolved, bounds);
+    if (STEER_SHOW_SPEEDOMETER && s_current_speed >= 0) {
+      prv_draw_speedometer(ctx, STREET_RELATIVE_RECT, bg_resolved, bounds);
+    } else {
+      prv_draw_street(ctx, STREET_RELATIVE_RECT, 0, s_street_text, bg_resolved, bounds);
+    }
   }
 }
 
@@ -1836,9 +1940,13 @@ static void inbox_received_handler(DictionaryIterator *iterator, void *context) 
   // Check forwarded icon bitmap
   Tuple *icon_t = dict_find(iterator, MESSAGE_KEY_NAV_ICON_BITMAP);
   if (icon_t && icon_t->type == TUPLE_BYTE_ARRAY && icon_t->length == 384) {
+#if !defined(PBL_PLATFORM_APLITE)
     memcpy(s_forwarded_icon_bytes, icon_t->value->data, 384);
     s_has_forwarded_icon = true;
     s_forwarded_icon_dirty = true;
+#else
+    s_has_forwarded_icon = false;
+#endif
     needs_update = true;
     APP_LOG(APP_LOG_LEVEL_DEBUG, "Parsed NAV_ICON_BITMAP.");
   } else {
@@ -1946,6 +2054,7 @@ static void inbox_received_handler(DictionaryIterator *iterator, void *context) 
     s_bg_color = NAV_SCREEN_BG;
     s_has_forwarded_icon = false;
     s_speed_alert_active = false;
+    s_current_speed = -1;
     needs_update = true;
     APP_LOG(APP_LOG_LEVEL_DEBUG, "Parsed NAV_CANCEL.");
   }

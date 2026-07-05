@@ -44,38 +44,32 @@ Notes:
 **Description** (≤1600 chars):
 
 ```
-Steer mirrors your phone's turn-by-turn navigation onto your Pebble: the next
-maneuver icon, distance, street name and ETA — glanceable on your wrist, so your
-phone can stay in your pocket.
+STEER mirrors your phone's turn-by-turn navigation onto your Pebble: the next maneuver icon, distance, street name and ETA - glanceable on your wrist, so your phone can stay in your pocket.
+What I wanted was a nav app that fits better with pebble design philosophy
 
-It's the watch half of a two-part project. Install the free Steer companion app
-on your Android phone; it reads navigation from your map app and forwards each
-maneuver to the watch.
+Install the free Steer companion app from github (website link) on your Android phone; it reads navigation from your map app and forwards each maneuver to the watch.
 
 Features:
-- Clear next-maneuver arrow (41 hand-drawn maneuver icons) with distance and street
+- Next-maneuver arrow with distance and street
 - ETA display
 - Per-turn vibration, so you feel each turn without looking
 - Custom background colour with automatic text contrast
 - Automatic night backlight (red-tinted on Pebble Time 2) to protect night vision
 - Launch a saved favourite destination straight from the watch
-- Interface in English or Portuguese, following your watch language
 
-Reads navigation from Google Maps, OsmAnd, CoMaps and Organic Maps. (Waze can be
-launched to a favourite, but doesn't expose its maneuvers.)
+Reads navigation from Google Maps, OsmAnd, CoMaps and Organic Maps.
 
-Works on Pebble, Pebble Steel, Pebble Time / Time Steel, Pebble Time Round,
-Pebble 2 and Pebble Time 2.
+Works on Pebble, Pebble Steel, Pebble Time / Time Steel, Pebble Time Round, Pebble 2 and Pebble Time 2.
 
-Open source (MIT). Companion app and source: github.com/bquelhas/pebble-steer
+Please let me know of any bugs
+
+Open source - mostly vibecoded
 ```
 
 **Release notes (1.0.0):**
 
 ```
-First public release. Turn-by-turn maneuvers with distance, ETA and per-turn
-vibration; automatic night backlight; favourites you can launch from the watch;
-and support for Google Maps, OsmAnd, CoMaps and Organic Maps.
+First public release.
 ```
 
 ## 4. Submission steps
@@ -92,9 +86,10 @@ and support for Google Maps, OsmAnd, CoMaps and Organic Maps.
 
 ## 5. Before you ship — status of open items (watch side, Gemini's)
 
-- 🔴 **BLOCKER — stale version label.** The wait screen shows `[Steer v2.0]`
-  (hardcoded in `watch/src/c/navme.c` lines 87 & 113). Change to `v1.0` (or drop
-  the label) and rebuild the pbw before publishing a 1.0.0 release.
+- ✅ **Stale version label — fixed.** The `[Steer v2.0]` string was dropped from
+  `watch/src/c/navme.c` (line 87 and `prv_set_waiting_text`); the wait screen now
+  reads just "Waiting for signal...". The pbw was rebuilt and verified on the
+  chalk emulator.
 - ✅ Favourites-empty-on-open — fixed.
 - ✅ Round (chalk / Pebble Time Round) layout — fixed; verified on the emulator today.
 - ❓ Backlight turns off when opening the app — unconfirmed; re-check.

@@ -26,7 +26,7 @@
   </g>
 
   <!-- Wordmark: S T then two mirrored "3" (read as rounded E) then R, in LECO -->
-  <g fill="#FFFFFF" font-family="LECO 2014" font-weight="bold" font-size="128"
+  <g fill="#FFFFFF" font-family="LECO 2014" font-size="128"
      text-anchor="middle">
     <text x="327" y="168">S</text>
     <text x="411" y="168">T</text>

@@ -84,7 +84,7 @@ static Layer *s_speed_sign_layer;
 
 // State Variables
 static char s_distance_text[32] = "";
-static char s_street_text[128] = "Waiting for signal... [Steer v2.0]";
+static char s_street_text[128] = "Waiting for signal...";
 static char s_eta_text[16] = "ETA: --:--";
 static char s_gps_text[32] = "GPS: ---";
 static int s_maneuver_index = -1;  // -1 means no active maneuver, show chevron
@@ -110,7 +110,7 @@ static const char *prv_tr(const char *en, const char *pt) {
 }
 // Fill s_street_text with the localized "waiting for signal" placeholder.
 static void prv_set_waiting_text(void) {
-  snprintf(s_street_text, sizeof(s_street_text), "%s [Steer v2.0]",
+  snprintf(s_street_text, sizeof(s_street_text), "%s",
            prv_tr("Waiting for signal...", "Aguardando sinal..."));
 }
 

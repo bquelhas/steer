@@ -254,7 +254,7 @@ static void prv_draw_icon(GContext *ctx, GRect bounds, int offset_x, bool has_fw
 
 static void prv_update_backlight(void) {
   bool should_enable = s_backlight_always_on;
-  if (!should_enable && s_maneuver_index >= 0) {
+  if (!should_enable) {
     time_t temp = time(NULL);
     struct tm *tick_time = localtime(&temp);
     int hour = tick_time->tm_hour;

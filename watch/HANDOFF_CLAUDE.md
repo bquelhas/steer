@@ -8,6 +8,7 @@
 - **Text Slide**: Applied vertical offsets during drawing in `prv_panel_update_proc` (outbound slides up by up to 20px, inbound slides in from 8px below).
 - **Faster transition duration**: Switched transition frame timer from `25ms` to `16ms` (matching 60fps refresh rate on color watches) under `USE_CARDS_TRANSITION` to make the cards wipe and morph transitions feel fluid and snappy.
 - **Toggle Macro**: Introduced `#define USE_CARDS_TRANSITION 1` in `navme.c`. Setting this macro to `0` reverts to the old slide/squash transition sequence (restoring the `25ms` frame rate exactly).
+- **Night Backlight Red Light Fix**: Modified `prv_update_backlight` to enable the night backlight red light (from 20:00 to 07:00) at all times when the app window is loaded/open, rather than restricting it only to when actively receiving navigation steps (`s_maneuver_index >= 0`).
 
 **Aplite Compatibility & Memory Optimization — DONE:**
 - Re-enabled `"aplite"` in `package.json` target platforms.

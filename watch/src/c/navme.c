@@ -1048,43 +1048,23 @@ static void prv_dg_draw_row_range(GContext *ctx, int d, int sy0, int sy1, int xL
   }
 }
 
-// Map destination row r (of h) back to the source-row band it covers, so no ink is dropped.
-static inline void prv_dg_src_band(int r, int h, int ink_h, int *sy0, int *sy1) {
-  *sy0 = s_dg_ink_top + (int)((long)r * ink_h / h);
-  *sy1 = s_dg_ink_top + (int)((long)(r + 1) * ink_h / h) - 1;
-  if (*sy1 < *sy0) *sy1 = *sy0;
-}
-
-// Blit digit d squashed to `h` of its full ink height, anchored at top_y (grows downward).
-static void prv_dg_blit_top(GContext *ctx, int d, int xL, int top_y, int h, int ink_h) {
-  if (h <= 0) return;
-  for (int r = 0; r < h; r++) {
-    int sy0, sy1;
-    prv_dg_src_band(r, h, ink_h, &sy0, &sy1);
-    prv_dg_draw_row_range(ctx, d, sy0, sy1, xL, top_y + r);
+static void prv_dg_blit_offset(GContext *ctx, int d, int xL, int y_origin, int dy, int ink_top, int ink_bot, int clip_min_y, int clip_max_y) {
+  for (int r = ink_top; r <= ink_bot; r++) {
+    int dest_y = y_origin + r + dy;
+    if (dest_y >= clip_min_y && dest_y <= clip_max_y) {
+      prv_dg_draw_row_range(ctx, d, r, r, xL, dest_y);
+    }
   }
 }
 
-// Blit digit d squashed to `h` of its full ink height, anchored at base_y (shrinks to base).
-static void prv_dg_blit_bottom(GContext *ctx, int d, int xL, int base_y, int h, int ink_h) {
-  if (h <= 0) return;
-  for (int r = 0; r < h; r++) {
-    int sy0, sy1;
-    prv_dg_src_band(r, h, ink_h, &sy0, &sy1);
-    prv_dg_draw_row_range(ctx, d, sy0, sy1, xL, base_y - h + 1 + r);
-  }
-}
-
-// Overdraw the changed digit columns of the distance with the squash morph. The static
-// LECO number (new value) must already have been drawn — this only touches columns whose
-// digit differs between old and new, keeping unchanged columns pixel-identical to the font.
+// Overdraw the changed digit columns of the distance with a vertical slide transition.
+// The static LECO number (new value) must already have been drawn — this only touches columns
+// whose digit differs between old and new, keeping unchanged columns pixel-identical to the font.
 static void prv_dg_draw_morph(GContext *ctx, GRect bounds, GColor bg) {
   GColor fg = prv_distance_fg_for_bg(bg);
   int lo = strlen(s_dg_old);
   int ln = strlen(s_dg_new);
   int ncols = (lo > ln) ? lo : ln;
-  int top_y = bounds.origin.y + s_dg_ink_top;
-  int base_y = bounds.origin.y + s_dg_ink_bot;
   int ink_h = s_dg_ink_bot - s_dg_ink_top + 1;
 
   // Compute the exact start x-coordinate of the new string (s_dg_new) as drawn by the system
@@ -1131,29 +1111,28 @@ static void prv_dg_draw_morph(GContext *ctx, GRect bounds, GColor bg) {
     if (oc == nc) continue;                          // unchanged: keep the static font draw
 
     int xL = x_start + (ln - 1 - k) * s_dg_adv;
-    // Erase the column cell (down to just below the base) so the static full-height digit
-    // is removed before we paint the morphing pair.
+    // Erase the column cell so the static full-height digit is removed before we paint the sliding pair.
     graphics_context_set_fill_color(ctx, bg);
     graphics_fill_rect(ctx, GRect(xL, bounds.origin.y, s_dg_adv,
-                                  base_y - bounds.origin.y + 3), 0, GCornerNone);
+                                  bounds.size.h), 0, GCornerNone);
 
-    // Ease-in-out (smoothstep) the linear progress so the morph starts and ends gently.
-    // A linear ramp made the first tick jump ~10% instantly, which read as the old digit
-    // "lurching down" to the base before the smooth part — this softens that opening step.
+    // Ease-in-out the progress
     int p = s_dg_pct;
     int eased = (300 * p * p - 2 * p * p * p) / 10000;   // 3t^2 - 2t^3, scaled to 0..100
     if (eased < 0) eased = 0; else if (eased > 100) eased = 100;
-    int h_new = ink_h * eased / 100;
-    int h_old = ink_h - h_new;
+    
+    int dy_old = -(eased * ink_h / 100);
+    int dy_new = ink_h - (eased * ink_h / 100);
 
     graphics_context_set_stroke_color(ctx, fg);
-    // Old digit shrinks down to the base; new digit grows down from the top.
-    // They meet exactly at the moving boundary, only scaling on the vertical axis.
+    int clip_min_y = bounds.origin.y + s_dg_ink_top;
+    int clip_max_y = bounds.origin.y + s_dg_ink_bot;
+
     if (oc >= '0' && oc <= '9') {
-      prv_dg_blit_bottom(ctx, oc - '0', xL, base_y, h_old, ink_h);
+      prv_dg_blit_offset(ctx, oc - '0', xL, bounds.origin.y, dy_old, s_dg_ink_top, s_dg_ink_bot, clip_min_y, clip_max_y);
     }
     if (nc >= '0' && nc <= '9') {
-      prv_dg_blit_top(ctx, nc - '0', xL, top_y, h_new, ink_h);
+      prv_dg_blit_offset(ctx, nc - '0', xL, bounds.origin.y, dy_new, s_dg_ink_top, s_dg_ink_bot, clip_min_y, clip_max_y);
     }
   }
 }

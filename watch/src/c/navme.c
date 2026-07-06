@@ -1332,7 +1332,8 @@ static void prv_panel_update_proc(Layer *layer, GContext *ctx) {
       if (s_prev_pdc_image) {
         prv_icon_apply_morph(s_prev_pdc_image, morph_pct);
       }
-      prv_draw_icon(ctx, ICON_RELATIVE_RECT, 0, s_prev_has_forwarded, s_prev_forwarded_icon_bytes, s_prev_pdc_image, s_prev_maneuver_index, 100);
+      GRect old_icon_rect = ICON_RELATIVE_RECT; old_icon_rect.origin.y += text_dy;
+      prv_draw_icon(ctx, old_icon_rect, 0, s_prev_has_forwarded, s_prev_forwarded_icon_bytes, s_prev_pdc_image, s_prev_maneuver_index, 100);
 
       // Draw old text
       GRect old_dist_rect = DISTANCE_RELATIVE_RECT; old_dist_rect.origin.y += text_dy;
@@ -1357,7 +1358,8 @@ static void prv_panel_update_proc(Layer *layer, GContext *ctx) {
       if (s_active_pdc_image) {
         prv_icon_apply_morph(s_active_pdc_image, morph_pct);
       }
-      prv_draw_icon(ctx, ICON_RELATIVE_RECT, 0, s_has_forwarded_icon, s_forwarded_icon_bytes, s_active_pdc_image, s_maneuver_index, 100);
+      GRect new_icon_rect = ICON_RELATIVE_RECT; new_icon_rect.origin.y += text_dy;
+      prv_draw_icon(ctx, new_icon_rect, 0, s_has_forwarded_icon, s_forwarded_icon_bytes, s_active_pdc_image, s_maneuver_index, 100);
 
       // Draw new text
       GRect new_dist_rect = DISTANCE_RELATIVE_RECT; new_dist_rect.origin.y += text_dy;

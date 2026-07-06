@@ -1048,6 +1048,18 @@ static void prv_dg_draw_row_range(GContext *ctx, int d, int sy0, int sy1, int xL
   }
 }
 
+static int prv_dg_get_char_x_offset(const char *str, int char_index, GFont font, int max_width) {
+  if (char_index <= 0) return 0;
+  char sub[16];
+  if (char_index >= (int)sizeof(sub)) char_index = sizeof(sub) - 1;
+  strncpy(sub, str, char_index);
+  sub[char_index] = '\0';
+  GSize size = graphics_text_layout_get_content_size(
+    sub, font, GRect(0, 0, max_width, 60), GTextOverflowModeWordWrap, GTextAlignmentLeft
+  );
+  return size.w;
+}
+
 static void prv_dg_blit_offset(GContext *ctx, int d, int xL, int y_origin, int dy, int ink_top, int ink_bot, int clip_min_y, int clip_max_y) {
   for (int r = ink_top; r <= ink_bot; r++) {
     int dest_y = y_origin + r + dy;
@@ -1110,29 +1122,38 @@ static void prv_dg_draw_morph(GContext *ctx, GRect bounds, GColor bg) {
     char nc = (k < ln) ? s_dg_new[ln - 1 - k] : 0;
     if (oc == nc) continue;                          // unchanged: keep the static font draw
 
-    int xL = x_start + (ln - 1 - k) * s_dg_adv;
-    // Erase the column cell so the static full-height digit is removed before we paint the sliding pair.
-    graphics_context_set_fill_color(ctx, bg);
-    graphics_fill_rect(ctx, GRect(xL, bounds.origin.y, s_dg_adv,
-                                  bounds.size.h), 0, GCornerNone);
-
-    // Ease-in-out the progress
-    int p = s_dg_pct;
-    int eased = (300 * p * p - 2 * p * p * p) / 10000;   // 3t^2 - 2t^3, scaled to 0..100
-    if (eased < 0) eased = 0; else if (eased > 100) eased = 100;
+    int idx = ln - 1 - k;
+    int x_left = x_start + prv_dg_get_char_x_offset(s_dg_new, idx, num_font, bounds.size.w);
+    int x_right = x_start + prv_dg_get_char_x_offset(s_dg_new, idx + 1, num_font, bounds.size.w);
     
-    int dy_old = -(eased * ink_h / 100);
-    int dy_new = ink_h - (eased * ink_h / 100);
+    // Erase the column cell with a tiny padding to wipe the old static digit completely
+    int erase_x = x_left - 1;
+    int erase_w = (x_right - x_left) + 2;
+    graphics_context_set_fill_color(ctx, bg);
+    graphics_fill_rect(ctx, GRect(erase_x, bounds.origin.y, erase_w, bounds.size.h), 0, GCornerNone);
 
     graphics_context_set_stroke_color(ctx, fg);
     int clip_min_y = bounds.origin.y + s_dg_ink_top;
     int clip_max_y = bounds.origin.y + s_dg_ink_bot;
 
-    if (oc >= '0' && oc <= '9') {
-      prv_dg_blit_offset(ctx, oc - '0', xL, bounds.origin.y, dy_old, s_dg_ink_top, s_dg_ink_bot, clip_min_y, clip_max_y);
-    }
-    if (nc >= '0' && nc <= '9') {
-      prv_dg_blit_offset(ctx, nc - '0', xL, bounds.origin.y, dy_new, s_dg_ink_top, s_dg_ink_bot, clip_min_y, clip_max_y);
+    if (s_dg_pct <= 50) {
+      // First half: draw old digit sliding up and out
+      int slide_p = s_dg_pct * 2;
+      int eased = (300 * slide_p * slide_p - 2 * slide_p * slide_p * slide_p) / 10000;
+      if (eased < 0) eased = 0; else if (eased > 100) eased = 100;
+      int dy_old = -(eased * ink_h / 100);
+      if (oc >= '0' && oc <= '9') {
+        prv_dg_blit_offset(ctx, oc - '0', x_left, bounds.origin.y, dy_old, s_dg_ink_top, s_dg_ink_bot, clip_min_y, clip_max_y);
+      }
+    } else {
+      // Second half: draw new digit sliding up and in
+      int slide_p = (100 - s_dg_pct) * 2;
+      int eased = (300 * slide_p * slide_p - 2 * slide_p * slide_p * slide_p) / 10000;
+      if (eased < 0) eased = 0; else if (eased > 100) eased = 100;
+      int dy_new = (eased * ink_h / 100);
+      if (nc >= '0' && nc <= '9') {
+        prv_dg_blit_offset(ctx, nc - '0', x_left, bounds.origin.y, dy_new, s_dg_ink_top, s_dg_ink_bot, clip_min_y, clip_max_y);
+      }
     }
   }
 }
@@ -1169,6 +1190,7 @@ static void prv_dg_start(const char *old_text, const char *new_text) {
 
   if (!prv_dg_all_digits(on) || !prv_dg_all_digits(nn)) { prv_dg_stop(); return; }
   if (strcmp(ou, nu) != 0) { prv_dg_stop(); return; }   // unit changed -> no morph (yet)
+  if (strlen(on) != strlen(nn)) { prv_dg_stop(); return; } // length changed -> clean fallback to static draw
   if (strcmp(on, nn) == 0) return;                       // identical -> nothing to do
 
   strncpy(s_dg_old, on, sizeof(s_dg_old) - 1); s_dg_old[sizeof(s_dg_old) - 1] = '\0';

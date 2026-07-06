@@ -142,6 +142,23 @@ static const uint32_t s_pdc_resource_ids[] = {
   RESOURCE_ID_PDC_ICON_36, RESOURCE_ID_PDC_ICON_37, RESOURCE_ID_PDC_ICON_38, RESOURCE_ID_PDC_ICON_39,
   RESOURCE_ID_PDC_ICON_40
 };
+#define USE_CARDS_TRANSITION 1
+
+#if defined(PBL_PLATFORM_APLITE)
+#define Steer_Has_Transitions 0
+#else
+#define Steer_Has_Transitions 1
+#endif
+
+#if Steer_Has_Transitions
+static void prv_icon_apply_morph(GDrawCommandImage *image, int32_t morph_pct);
+#if !USE_CARDS_TRANSITION
+static void prv_icon_apply_scale(GDrawCommandImage *image, int32_t scale_pct, int32_t visible_pct,
+                                 int32_t factor_x, int32_t factor_y);
+#endif
+#endif
+static void prv_icon_scale_once(GDrawCommandImage *image);
+
 static GDrawCommandImage *s_active_pdc_image = NULL;
 // Steer branding: the car-rental PDC shown on the "waiting for signal" screen
 // (s_maneuver_index < 0). Loaded + content-fitted once at window load.
@@ -181,13 +198,16 @@ static AppTimer *s_anim_timer = NULL;
 static AppTimer *s_idle_timer = NULL;
 static int s_anim_pct = 100;
 static int s_anim_prev_maneuver = -2;
+#if Steer_Has_Transitions
 // Contextual slide direction of the current transition (set per maneuver in prv_update_ui).
 static SlideDirection s_anim_slide_dir = SLIDE_DIR_RIGHT_TO_LEFT;
+#endif
 static bool s_last_rendered_has_forwarded = false;
 static char s_last_rendered_street[128] = "";
 static char s_last_rendered_distance[16] = "";
 static GColor s_last_rendered_bg_color;
 
+#if Steer_Has_Transitions
 // Variables for transition tracking
 static GDrawCommandImage *s_prev_pdc_image = NULL;
 #if defined(PBL_PLATFORM_APLITE)
@@ -200,6 +220,7 @@ static bool s_prev_has_forwarded = false;
 static char s_prev_distance_text[16] = "";
 static char s_prev_street_text[128] = "";
 static GColor s_prev_bg_color;
+#endif
 
 #if defined(PBL_COLOR)
 // ---- Per-digit squash animation (Color platforms only) ------------------------------
@@ -789,6 +810,7 @@ static void prv_draw_leco_string(GContext *ctx, const char *str, GPoint origin, 
 }
 
 
+#if Steer_Has_Transitions && !USE_CARDS_TRANSITION
 static int64_t prv_interpolate_moook(int32_t normalized, int64_t from, int64_t to) {
   static const int32_t frames_in[] = {0, 1, 20};
   static const int32_t frames_out[] = {4, 2, 1, 0};
@@ -820,6 +842,7 @@ static int64_t prv_interpolate_moook(int32_t normalized, int64_t from, int64_t t
     return to + (direction_out * frames_out[frame_idx - (num_frames_in + num_frames_mid)]);
   }
 }
+#endif
 
 static void prv_draw_distance(GContext *ctx, GRect bounds, int offset_x, const char *distance_text, GColor bg_color, GRect clip_rect) {
   GColor text_color = prv_distance_fg_for_bg(bg_color);
@@ -1258,8 +1281,12 @@ static void prv_draw_speedometer(GContext *ctx, GRect bounds, GColor bg_color, G
 
 static void prv_panel_update_proc(Layer *layer, GContext *ctx) {
   GRect bounds = layer_get_bounds(layer);
+#if Steer_Has_Transitions || defined(PBL_COLOR)
   int w = bounds.size.w;
+#endif
+#if Steer_Has_Transitions
   int h = bounds.size.h;
+#endif
 
 #if defined(PBL_COLOR)
   // Capture the LECO digit glyphs the first time a morph needs them. Done before any real
@@ -1268,6 +1295,74 @@ static void prv_panel_update_proc(Layer *layer, GContext *ctx) {
 #endif
 
   if (s_anim_state == ANIM_STATE_TRANSITIONING) {
+#if USE_CARDS_TRANSITION
+    // Cards-style transitions (background vertical wipe, vector icon morph to/from square, text slide)
+#if Steer_Has_Transitions
+    // 1. Draw background wipe
+    int y = (s_anim_pct * h) / 100;
+    GColor old_bg_resolved = prv_resolve_bg_color(s_prev_bg_color);
+    GColor new_bg_resolved = prv_resolve_bg_color(s_bg_color);
+
+    if (s_anim_slide_dir == SLIDE_DIR_LEFT_TO_RIGHT) {
+      // Wipe top-to-bottom: top is new, bottom is old
+      graphics_context_set_fill_color(ctx, new_bg_resolved);
+      graphics_fill_rect(ctx, GRect(0, 0, w, y), 0, GCornerNone);
+      graphics_context_set_fill_color(ctx, old_bg_resolved);
+      graphics_fill_rect(ctx, GRect(0, y, w, h - y), 0, GCornerNone);
+    } else {
+      // Wipe bottom-to-top: top is old, bottom is new
+      graphics_context_set_fill_color(ctx, old_bg_resolved);
+      graphics_fill_rect(ctx, GRect(0, 0, w, h - y), 0, GCornerNone);
+      graphics_context_set_fill_color(ctx, new_bg_resolved);
+      graphics_fill_rect(ctx, GRect(0, h - y, w, y), 0, GCornerNone);
+    }
+
+    // 2. Draw icon & text depending on animation progress
+    if (s_anim_pct <= 50) {
+      // First half: draw old icon morphing to square, old text sliding out
+      int morph_pct = s_anim_pct * 2;
+      int text_dy = -(morph_pct * 20 / 100);
+
+      // Mutate prev icon to morph state and draw it
+      if (s_prev_pdc_image) {
+        prv_icon_apply_morph(s_prev_pdc_image, morph_pct);
+      }
+      prv_draw_icon(ctx, ICON_RELATIVE_RECT, 0, s_prev_has_forwarded, s_prev_forwarded_icon_bytes, s_prev_pdc_image, s_prev_maneuver_index, 100);
+
+      // Draw old text
+      GRect old_dist_rect = DISTANCE_RELATIVE_RECT; old_dist_rect.origin.y += text_dy;
+      GRect old_street_rect = STREET_RELATIVE_RECT; old_street_rect.origin.y += text_dy;
+      prv_draw_distance(ctx, old_dist_rect, 0, s_prev_distance_text, old_bg_resolved, bounds);
+      
+      if (STEER_SHOW_SPEEDOMETER && s_current_speed >= 0) {
+        prv_draw_speedometer(ctx, old_street_rect, old_bg_resolved, bounds);
+      } else {
+        prv_draw_street(ctx, old_street_rect, 0, s_prev_street_text, old_bg_resolved, bounds);
+      }
+    } else {
+      // Second half: draw new icon morphing from square, new text sliding in
+      int morph_pct = (100 - s_anim_pct) * 2;
+      int text_dy = (morph_pct * 8 / 100);
+
+      // Mutate active icon to morph state and draw it
+      if (s_active_pdc_image) {
+        prv_icon_apply_morph(s_active_pdc_image, morph_pct);
+      }
+      prv_draw_icon(ctx, ICON_RELATIVE_RECT, 0, s_has_forwarded_icon, s_forwarded_icon_bytes, s_active_pdc_image, s_maneuver_index, 100);
+
+      // Draw new text
+      GRect new_dist_rect = DISTANCE_RELATIVE_RECT; new_dist_rect.origin.y += text_dy;
+      GRect new_street_rect = STREET_RELATIVE_RECT; new_street_rect.origin.y += text_dy;
+      prv_draw_distance(ctx, new_dist_rect, 0, s_distance_text, new_bg_resolved, bounds);
+      
+      if (STEER_SHOW_SPEEDOMETER && s_current_speed >= 0) {
+        prv_draw_speedometer(ctx, new_street_rect, new_bg_resolved, bounds);
+      } else {
+        prv_draw_street(ctx, new_street_rect, 0, s_street_text, new_bg_resolved, bounds);
+      }
+    }
+#endif
+#else
     const bool horizontal = (s_anim_slide_dir != SLIDE_DIR_BOTTOM_TO_TOP);
 
     // Staggered frame indices on the 10-frame moook timeline: the background leads,
@@ -1337,6 +1432,7 @@ static void prv_panel_update_proc(Layer *layer, GContext *ctx) {
     } else {
       prv_draw_street(ctx, new_street_rect, 0, s_street_text, new_bg_resolved, new_bounds);
     }
+#endif
   } else {
     // IDLE
     GColor bg_resolved = prv_resolve_bg_color(s_bg_color);
@@ -1384,10 +1480,12 @@ static void prv_panel_update_proc(Layer *layer, GContext *ctx) {
 #define ICON_ANIM_STEP_MS 25
 #define ICON_ANIM_STEP_PCT 5
 
+#if Steer_Has_Transitions
 static GPoint s_icon_pts_orig[ICON_PTS_CAP];
 static int s_icon_pts_count = 0;
 static uint16_t s_icon_radii_orig[ICON_CMDS_CAP];
 static int s_icon_circle_count = 0;
+#endif
 
 // Content-fit: every icon (regardless of how much of its 80x80 canvas it fills)
 // is scaled around its own content centre to fill the icon layer, then re-centred
@@ -1398,6 +1496,7 @@ static int32_t s_fit_num = 256;   // content-fit scale * 256 (fixed point)
 static int s_fit_cx = 40, s_fit_cy = 40;   // content centre, raw PDC coords
 static int s_box_cx = 40, s_box_cy = 40;   // layer centre (draw target)
 
+#if !USE_CARDS_TRANSITION
 // Squash & stretch physics, indexed by the 10-frame moook timeline.
 // {width%, height%}: the icon stretches along the slide axis on the way in, then
 // overshoots/squashes on impact and settles back to 100/100. For vertical slides
@@ -1415,7 +1514,35 @@ static const int8_t s_moook_squash_stretch[][2] = {
   {100, 100}, // Frame 9
   {100, 100}  // Frame 10
 };
+#endif
 
+static bool prv_icon_scale_once_iter(GDrawCommand *command, uint32_t index, void *context) {
+  GDrawCommandType type = gdraw_command_get_type(command);
+  uint16_t n = gdraw_command_get_num_points(command);
+  
+  for (uint16_t i = 0; i < n; i++) {
+    GPoint o = gdraw_command_get_point(command, i);
+    int32_t dx = ((int32_t)o.x - s_fit_cx) * s_fit_num / 256;
+    int32_t dy = ((int32_t)o.y - s_fit_cy) * s_fit_num / 256;
+    gdraw_command_set_point(command, i, GPoint(s_box_cx + dx, s_box_cy + dy));
+  }
+  
+  if (type == GDrawCommandTypeCircle) {
+    uint16_t orig_r = gdraw_command_get_radius(command);
+    uint16_t scaled_r = orig_r * s_fit_num / 256;
+    gdraw_command_set_radius(command, scaled_r);
+  }
+  return true;
+}
+
+static void prv_icon_scale_once(GDrawCommandImage *image) {
+  if (!image) return;
+  GDrawCommandList *list = gdraw_command_image_get_command_list(image);
+  if (!list) return;
+  gdraw_command_list_iterate(list, prv_icon_scale_once_iter, NULL);
+}
+
+#if Steer_Has_Transitions
 typedef struct {
   int idx;
   bool snapshot;   // true: read original points; false: write scaled points
@@ -1499,6 +1626,7 @@ static bool prv_icon_scale_iter(GDrawCommand *command, uint32_t index, void *con
   }
   return true;
 }
+#endif
 
 #define ICON_PDC_CANVAS_FALLBACK 80
 static void prv_icon_compute_fit(void) {
@@ -1522,6 +1650,7 @@ static void prv_icon_compute_fit(void) {
   s_fit_num = box * 256 / canvas;   // uniform: NxN PDC canvas -> layer box
 }
 
+#if Steer_Has_Transitions
 static void prv_icon_snapshot_points(void) {
   s_icon_pts_count = 0;
   s_icon_circle_count = 0;
@@ -1537,6 +1666,7 @@ static void prv_icon_snapshot_points(void) {
   s_icon_pts_count = ctx.idx;
 }
 
+#if !USE_CARDS_TRANSITION
 // factor_x/factor_y are the squash & stretch percentages (100 = no deformation).
 // They must never be 0: a 0 factor collapses every point onto the box centre.
 static void prv_icon_apply_scale(GDrawCommandImage *image, int32_t scale_pct, int32_t visible_pct,
@@ -1555,6 +1685,74 @@ static void prv_icon_apply_scale(GDrawCommandImage *image, int32_t scale_pct, in
                        .visible_pct = visible_pct, .factor_x = factor_x, .factor_y = factor_y };
   gdraw_command_list_iterate(list, prv_icon_scale_iter, &ctx);
 }
+#endif
+
+static int16_t prv_int_attract_to(int16_t i, int16_t bounds, int32_t pct) {
+  const int16_t delta_0 = (int16_t) ((0 + 1) - i);
+  const int16_t delta_b = (int16_t) ((bounds - 1) - i);
+  int16_t diff_0 = delta_0 > 0 ? delta_0 : -delta_0;
+  int16_t diff_b = delta_b > 0 ? delta_b : -delta_b;
+  const int16_t delta = diff_0 < diff_b ? delta_0 : delta_b;
+  return (int16_t) (i + delta * pct / 100);
+}
+
+static bool prv_icon_morph_iter(GDrawCommand *command, uint32_t index, void *context) {
+  IconScaleCtx *c = (IconScaleCtx *)context;
+  GDrawCommandType type = gdraw_command_get_type(command);
+  uint16_t n = gdraw_command_get_num_points(command);
+  
+  int start_idx = c->idx;
+  c->idx += n;
+  
+  GPoint scaled_pts[n];
+  for (uint16_t i = 0; i < n; i++) {
+    if (start_idx + i < ICON_PTS_CAP) {
+      GPoint o = s_icon_pts_orig[start_idx + i];
+      
+      int box_w = s_box_cx * 2;
+      int box_h = s_box_cy * 2;
+      
+      int16_t local_x = o.x;
+      int16_t local_y = o.y + 1;
+      
+      int16_t attracted_x = prv_int_attract_to(local_x, box_w, c->scale_pct);
+      int16_t attracted_y = prv_int_attract_to(local_y, box_h, c->scale_pct);
+      
+      scaled_pts[i] = GPoint(attracted_x, attracted_y);
+    } else {
+      scaled_pts[i] = GPoint(0, 0);
+    }
+  }
+  
+  if (type == GDrawCommandTypeCircle) {
+    if (start_idx < s_icon_pts_count) {
+      gdraw_command_set_hidden(command, false);
+      gdraw_command_set_point(command, 0, scaled_pts[0]);
+    } else {
+      gdraw_command_set_hidden(command, true);
+    }
+  } else {
+    gdraw_command_set_hidden(command, false);
+    for (uint16_t i = 0; i < n; i++) {
+      gdraw_command_set_point(command, i, scaled_pts[i]);
+    }
+  }
+  return true;
+}
+
+static void prv_icon_apply_morph(GDrawCommandImage *image, int32_t morph_pct) {
+  if (!image || s_icon_pts_count == 0) {
+    return;
+  }
+  GDrawCommandList *list = gdraw_command_image_get_command_list(image);
+  if (!list) {
+    return;
+  }
+  IconScaleCtx ctx = { .idx = 0, .snapshot = false, .scale_pct = morph_pct,
+                       .visible_pct = 100, .factor_x = 100, .factor_y = 100 };
+  gdraw_command_list_iterate(list, prv_icon_morph_iter, &ctx);
+}
+#endif
 
 // Loads the car-rental branding PDC and content-fits it to the icon layer box,
 // reusing the maneuver-icon fit pipeline. Points are mutated in place on the
@@ -1570,8 +1768,7 @@ static void prv_wait_icon_init(void) {
   GDrawCommandImage *saved = s_active_pdc_image;
   s_active_pdc_image = s_wait_pdc_image;   // fit pipeline reads this global
   prv_icon_compute_fit();
-  prv_icon_snapshot_points();
-  prv_icon_apply_scale(s_wait_pdc_image, 100, 100, 100, 100);
+  prv_icon_scale_once(s_wait_pdc_image);
   s_active_pdc_image = saved;
 }
 
@@ -1677,15 +1874,18 @@ static void prv_stop_icon_anim(void) {
   }
   
   if (s_anim_state == ANIM_STATE_TRANSITIONING) {
+#if Steer_Has_Transitions
     // Clean up previous transition states
     if (s_prev_pdc_image) {
       gdraw_command_image_destroy(s_prev_pdc_image);
       s_prev_pdc_image = NULL;
     }
+#endif
   }
   s_anim_state = ANIM_STATE_IDLE;
 }
 
+#if Steer_Has_Transitions
 // Maps a maneuver index to the side the new card should enter from.
 //  - Cancel (-1) and left-hand maneuvers slide in from the left.
 //  - U-turns and arrive/depart slide up from the bottom.
@@ -1714,6 +1914,29 @@ static void prv_anim_timer_cb(void *ctx) {
 
   if (s_anim_state == ANIM_STATE_TRANSITIONING) {
     s_anim_pct += 10; // increment progress by 10% (10 frames)
+#if USE_CARDS_TRANSITION
+    if (s_anim_pct == 50) {
+      if (s_prev_pdc_image) {
+        gdraw_command_image_destroy(s_prev_pdc_image);
+        s_prev_pdc_image = NULL;
+      }
+      prv_icon_snapshot_points();
+    }
+    
+    if (s_anim_pct >= 100) {
+      s_anim_pct = 100;
+      s_anim_state = ANIM_STATE_IDLE;
+      if (s_active_pdc_image) {
+        prv_icon_apply_morph(s_active_pdc_image, 0);
+      }
+      if (s_prev_pdc_image) {
+        gdraw_command_image_destroy(s_prev_pdc_image);
+        s_prev_pdc_image = NULL;
+      }
+    } else {
+      s_anim_timer = app_timer_register(25, prv_anim_timer_cb, NULL);
+    }
+#else
     if (s_anim_pct >= 100) {
       s_anim_pct = 100;
       s_anim_state = ANIM_STATE_IDLE;
@@ -1743,12 +1966,14 @@ static void prv_anim_timer_cb(void *ctx) {
       }
       s_anim_timer = app_timer_register(25, prv_anim_timer_cb, NULL);
     }
+#endif
 
     if (s_panel_layer) {
       layer_mark_dirty(s_panel_layer);
     }
   }
 }
+#endif
 
 static void prv_update_ui(void) {
   if (s_status_bar_layer) {
@@ -1759,6 +1984,44 @@ static void prv_update_ui(void) {
                       (s_has_forwarded_icon != s_last_rendered_has_forwarded) ||
                       (strcmp(s_street_text, s_last_rendered_street) != 0);
 
+#if !Steer_Has_Transitions
+  if (page_changed) {
+    s_anim_prev_maneuver = s_maneuver_index;
+    s_last_rendered_has_forwarded = s_has_forwarded_icon;
+    s_last_rendered_bg_color = s_bg_color;
+    strncpy(s_last_rendered_street, s_street_text, sizeof(s_last_rendered_street));
+    strncpy(s_last_rendered_distance, s_distance_text, sizeof(s_last_rendered_distance));
+    
+    s_anim_state = ANIM_STATE_IDLE;
+    s_anim_pct = 100;
+    s_forwarded_icon_dirty = false;
+    
+    if (s_active_pdc_image) {
+      gdraw_command_image_destroy(s_active_pdc_image);
+      s_active_pdc_image = NULL;
+    }
+    
+    if (s_maneuver_index >= 0 && s_maneuver_index < 41) {
+      s_active_pdc_image = gdraw_command_image_create_with_resource(s_pdc_resource_ids[s_maneuver_index]);
+      if (s_active_pdc_image) {
+        prv_icon_compute_fit();
+        prv_icon_scale_once(s_active_pdc_image);
+      }
+    }
+    if (s_panel_layer) {
+      layer_mark_dirty(s_panel_layer);
+    }
+  } else {
+    bool distance_changed = strcmp(s_distance_text, s_last_rendered_distance) != 0;
+    if (distance_changed || s_forwarded_icon_dirty) {
+      strncpy(s_last_rendered_distance, s_distance_text, sizeof(s_last_rendered_distance));
+      s_forwarded_icon_dirty = false;
+      if (s_panel_layer) {
+        layer_mark_dirty(s_panel_layer);
+      }
+    }
+  }
+#else
   if (page_changed) {
     if (s_anim_prev_maneuver == -2) {
       // First run: no animation, just set up active state immediately
@@ -1776,18 +2039,22 @@ static void prv_update_ui(void) {
         s_active_pdc_image = gdraw_command_image_create_with_resource(s_pdc_resource_ids[s_maneuver_index]);
         if (s_active_pdc_image) {
           prv_icon_compute_fit();
+#if USE_CARDS_TRANSITION
+          prv_icon_scale_once(s_active_pdc_image);
+          prv_icon_snapshot_points();
+#else
           prv_icon_snapshot_points();
           prv_icon_apply_scale(s_active_pdc_image, 100, 100, 100, 100);
+#endif
         }
       }
     } else {
       // Transitioning!
       prv_stop_icon_anim();
 #if defined(PBL_COLOR)
-      // The panel slide owns this change; cancel any in-flight digit morph (#4: digit
-      // animation is for same-maneuver countdowns only, not panel transitions — for now).
+      // The panel slide owns this change; cancel any in-flight digit morph
       prv_dg_stop();
-#endif      // Move current active state to prev variables
+#endif
       s_prev_pdc_image = s_active_pdc_image;
       s_prev_maneuver_index = s_anim_prev_maneuver;
       s_prev_has_forwarded = s_last_rendered_has_forwarded;
@@ -1802,8 +2069,13 @@ static void prv_update_ui(void) {
         s_active_pdc_image = gdraw_command_image_create_with_resource(s_pdc_resource_ids[s_maneuver_index]);
         if (s_active_pdc_image) {
           prv_icon_compute_fit();
+#if USE_CARDS_TRANSITION
+          prv_icon_scale_once(s_active_pdc_image);
+          // Snapshot points is deferred to s_anim_pct == 50 in prv_anim_timer_cb!
+#else
           prv_icon_snapshot_points();
           prv_icon_apply_scale(s_active_pdc_image, 100, 100, 100, 100);
+#endif
         }
       }
       
@@ -1843,6 +2115,7 @@ static void prv_update_ui(void) {
       }
     }
   }
+#endif
 
   if (s_speed_sign_layer) {
     layer_set_hidden(s_speed_sign_layer, !s_speed_alert_active);
@@ -2396,10 +2669,12 @@ static void prv_window_unload(Window *window) {
     s_active_pdc_image = NULL;
   }
 
+#if Steer_Has_Transitions
   if (s_prev_pdc_image) {
     gdraw_command_image_destroy(s_prev_pdc_image);
     s_prev_pdc_image = NULL;
   }
+#endif
 
   if (s_wait_pdc_image) {
     gdraw_command_image_destroy(s_wait_pdc_image);

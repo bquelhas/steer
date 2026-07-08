@@ -69,7 +69,11 @@ class NavNotificationListenerService : NotificationListenerService() {
 
         Log.d(TAG, "notif from $pkg title='$title' text='$text' subText='$subText'")
 
-        var data = NaviParser.parse(pkg, title, text, subText, NavPrefs.getUnitSystem(applicationContext)) ?: return
+        var data = NaviParser.parse(
+            pkg, title, text, subText,
+            NavPrefs.getUnitSystem(applicationContext),
+            NavPrefs.getEtaMode(applicationContext),
+        ) ?: return
 
         // A live nav update arrived: cancel any pending session-end so a Maps notification
         // cancel+repost doesn't tear down the session (and its travel mode) between frames.

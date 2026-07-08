@@ -51,11 +51,13 @@
     <string name="units_auto">Automático</string>
     <string name="units_metric">km</string>
     <string name="units_imperial">mi</string>
+    <string name="eta_label">Mostrar ETA</string>
+    <string name="eta_arrival">Hora de chegada</string>
+    <string name="eta_remaining">Tempo restante</string>
     <string name="open_developer">Modo de teste</string>
     <string name="developer_title">Modo de teste</string>
     <string name="preview_distance">200 M</string>
     <string name="preview_instruction">Junction 1 A20 / N114 A2 A6 A13 Santarém</string>
-    <string name="preview_caption">Pré-visualização do ecrã do relógio</string>
     <string name="color_label">Cor de fundo do relógio</string>
     <string name="preview_icon_desc">Ícone de manobra</string>
     <string name="favorites_title">Destinos favoritos</string>
@@ -104,9 +106,7 @@
     <string name="tab_developer">Teste</string>
 
     <!-- Personalização -->
-    <string name="color_caption">A app do telemóvel também se pinta com esta cor.</string>
     <string name="detect_apps_label">Apps de navegação a ler</string>
-    <string name="detect_apps_caption">O Steer só lê manobras das apps que marcares aqui. O Waze é só para lançar (a notificação esconde a manobra).</string>
     <string name="detect_maps">Google Maps</string>
     <string name="detect_osmand">OsmAnd</string>
     <string name="detect_comaps">CoMaps</string>

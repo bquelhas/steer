@@ -21,10 +21,15 @@ class ManeuverClassifierTest {
         for (y in y0..y1) for (x in x0..x1) set(p, x, y)
     }
 
+    // These two exercise the GEOMETRY model on synthetic arrows, so they disable the
+    // Maps fingerprint table (useTable = false). The table holds the signatures of real
+    // Google Maps artwork; a hand-drawn stem/elbow would otherwise nearest-neighbour onto
+    // some Maps glyph and short-circuit before the geometry runs. Geometry is artwork-
+    // agnostic, which is exactly what we're asserting here.
     @Test fun straightArrowIsStraightAndHigh() {
         val p = blank()
         vline(p, 23, 25, 8, 40)            // vertical stem, tip at top
-        val r = ManeuverClassifier.classify(p)
+        val r = ManeuverClassifier.classify(p, useTable = false)
         assertEquals(Direction.STRAIGHT, r.direction)
         assertEquals(ManeuverClassifier.Confidence.HIGH, r.confidence)
     }
@@ -33,7 +38,7 @@ class ManeuverClassifierTest {
         val p = blank()
         vline(p, 23, 25, 24, 40)           // stem rising from the bottom
         vline(p, 6, 24, 23, 25)            // elbow turning left, tip at the left
-        val r = ManeuverClassifier.classify(p)
+        val r = ManeuverClassifier.classify(p, useTable = false)
         assertTrue(
             "expected a left-side maneuver, got ${r.direction}",
             r.direction in setOf(Direction.LEFT, Direction.SLIGHT_LEFT, Direction.SHARP_LEFT),

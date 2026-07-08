@@ -31,28 +31,35 @@ object ManeuverFingerprints {
         hex("000000008001c003e007f00fb00d8001c003e0076006700e300c300c00000000") to Direction.GENERIC_MERGE,  // merge
         hex("000000008001c003e007f00fb00d8001c003e0076006700e300c300c00000000") to Direction.GENERIC_MERGE,  // merge_left
         hex("000000008001c003e007f00fb00d8001c003e0076006700e300c300c00000000") to Direction.GENERIC_MERGE,  // merge_right
-        hex("000000006000f800fc018c038c038c01fc39f83b303f303eb03fb03f00000000") to Direction.ROUNDABOUT_1_LEFT,  // roundabout_enter_and_exit_ccw_sharp_right
-        hex("0000000000003c0c7e1cee38c77fc77fee387e1c3c0c18001800180000000000") to Direction.ROUNDABOUT_2_LEFT,  // roundabout_enter_and_exit_ccw_normal_right
-        hex("00000000c01fc01f001ef01ff81bb81b1c031c03b803f801f000600000000000") to Direction.ROUNDABOUT_3_LEFT,  // roundabout_enter_and_exit_ccw_slight_right
-        hex("8001c003e007f00fb00dc003e007700e300c300c700ee007c003800100000000") to Direction.ROUNDABOUT_4_LEFT,  // roundabout_enter_and_exit_ccw_straight
-        hex("00000000fc01fc017c00fc0fdc1fdc1dc038c038c01d801f000f000600000000") to Direction.ROUNDABOUT_5_LEFT,  // roundabout_enter_and_exit_ccw_slight_left
-        hex("000000000000303c387e1c77fee3fee31c77387e303c00180018001800000000") to Direction.ROUNDABOUT_6_LEFT,  // roundabout_enter_and_exit_ccw_normal_left
-        hex("000000000006001f803fc031c03180319c3fdc1ffc0c7c0cfc0dfc0d00000000") to Direction.ROUNDABOUT_7_LEFT,  // roundabout_enter_and_exit_ccw_sharp_left
-        hex("0000c003e007e00e700c700ce00ee006c002d806f807f003e007c00600000000") to Direction.ROUNDABOUT_8_LEFT,  // roundabout_enter_and_exit_ccw_u_turn
-        hex("000000000006001f803fc031c03180319c3fdc1ffc0c7c0cfc0dfc0d00000000") to Direction.ROUNDABOUT_1_RIGHT,  // roundabout_enter_and_exit_cw_sharp_left
-        hex("000000000000303c387e1c77fee3fee31c77387e303c00180018001800000000") to Direction.ROUNDABOUT_2_RIGHT,  // roundabout_enter_and_exit_cw_normal_left
-        hex("00000000f803f8037800f80fd81fd81dc038c038c01d801f000f000600000000") to Direction.ROUNDABOUT_3_RIGHT,  // roundabout_enter_and_exit_cw_slight_left
-        hex("8001c003e007f00fb00dc003e007700e300c300c700ee007c003800100000000") to Direction.ROUNDABOUT_4_RIGHT,  // roundabout_enter_and_exit_cw_straight
-        hex("00000000803f803f003ef03ff83bb83b1c031c03b803f801f000600000000000") to Direction.ROUNDABOUT_5_RIGHT,  // roundabout_enter_and_exit_cw_slight_right
-        hex("0000000000003c0c7e1cee38c77fc77fee387e1c3c0c18001800180000000000") to Direction.ROUNDABOUT_6_RIGHT,  // roundabout_enter_and_exit_cw_normal_right
-        hex("000000006000f800fc018c038c038c01fc39f83b303f303eb03fb03f00000000") to Direction.ROUNDABOUT_7_RIGHT,  // roundabout_enter_and_exit_cw_sharp_right
-        hex("0000c003e0077007300e300e700760074003601be01fc00fe007600300000000") to Direction.ROUNDABOUT_8_RIGHT,  // roundabout_enter_and_exit_cw_u_turn
-        hex("00000004f00ffc1f9c3fce7f862e060e0e061c07fc03f0016000600000000000") to Direction.GENERIC_ROUNDABOUT_LEFT,  // roundabout_enter_and_exit_ccw
-        hex("00000004f00ffc1f9c3fce7f862e060e0e061c07fc03f0016000600000000000") to Direction.GENERIC_ROUNDABOUT_LEFT,  // roundabout_enter_ccw
-        hex("00002000f00ff83ffc39fe73746170606070e038c03f800f0006000600000000") to Direction.GENERIC_ROUNDABOUT_RIGHT,  // roundabout_enter_and_exit_cw
-        hex("00002000f00ff83ffc39fe73746170606070e038c03f800f0006000600000000") to Direction.GENERIC_ROUNDABOUT_RIGHT,  // roundabout_enter_cw
-        hex("000000018003c007e00ff00da0098001f003fc07180e000c001c001800000000") to Direction.ROUNDABOUT_EXIT_LEFT,  // roundabout_exit_ccw
-        hex("00008000c001e003f007b00f90058001c00fe03f701830003800180000000000") to Direction.ROUNDABOUT_EXIT_RIGHT,  // roundabout_exit_cw
+        // Roundabout mapping (Bruno-confirmed 2026-07-08). Circulation is COUNTRY-FIXED, not
+        // encoded by the exit arrow: Portugal/right-hand traffic circulates CCW and always maps
+        // to OUR _RIGHT icon family; UK/left-hand traffic circulates CW -> _LEFT family. The
+        // suffix (sharp/normal/slight + left/right/straight/u_turn) is the EXIT ANGLE only, which
+        // picks the RBT number (45deg buckets); straight uses the dedicated EXIT icon.
+        hex("000000006000f800fc018c038c038c01fc39f83b303f303eb03fb03f00000000") to Direction.ROUNDABOUT_1_RIGHT,  // roundabout_enter_and_exit_ccw_sharp_right   45
+        hex("0000000000003c0c7e1cee38c77fc77fee387e1c3c0c18001800180000000000") to Direction.ROUNDABOUT_2_RIGHT,  // roundabout_enter_and_exit_ccw_normal_right  90
+        hex("00000000c01fc01f001ef01ff81bb81b1c031c03b803f801f000600000000000") to Direction.ROUNDABOUT_3_RIGHT,  // roundabout_enter_and_exit_ccw_slight_right  135
+        hex("8001c003e007f00fb00dc003e007700e300c300c700ee007c003800100000000") to Direction.ROUNDABOUT_EXIT_RIGHT,  // roundabout_enter_and_exit_ccw_straight    180
+        hex("00000000fc01fc017c00fc0fdc1fdc1dc038c038c01d801f000f000600000000") to Direction.ROUNDABOUT_5_RIGHT,  // roundabout_enter_and_exit_ccw_slight_left   215
+        hex("000000000000303c387e1c77fee3fee31c77387e303c00180018001800000000") to Direction.ROUNDABOUT_6_RIGHT,  // roundabout_enter_and_exit_ccw_normal_left   270
+        hex("000000000006001f803fc031c03180319c3fdc1ffc0c7c0cfc0dfc0d00000000") to Direction.ROUNDABOUT_7_RIGHT,  // roundabout_enter_and_exit_ccw_sharp_left    315
+        hex("0000c003e007e00e700c700ce00ee006c002d806f807f003e007c00600000000") to Direction.ROUNDABOUT_8_RIGHT,  // roundabout_enter_and_exit_ccw_u_turn        360
+        hex("000000000006001f803fc031c03180319c3fdc1ffc0c7c0cfc0dfc0d00000000") to Direction.ROUNDABOUT_1_LEFT,  // roundabout_enter_and_exit_cw_sharp_left      45
+        hex("000000000000303c387e1c77fee3fee31c77387e303c00180018001800000000") to Direction.ROUNDABOUT_2_LEFT,  // roundabout_enter_and_exit_cw_normal_left     90
+        hex("00000000f803f8037800f80fd81fd81dc038c038c01d801f000f000600000000") to Direction.ROUNDABOUT_3_LEFT,  // roundabout_enter_and_exit_cw_slight_left     135
+        hex("8001c003e007f00fb00dc003e007700e300c300c700ee007c003800100000000") to Direction.ROUNDABOUT_EXIT_LEFT,  // roundabout_enter_and_exit_cw_straight     180
+        hex("00000000803f803f003ef03ff83bb83b1c031c03b803f801f000600000000000") to Direction.ROUNDABOUT_5_LEFT,  // roundabout_enter_and_exit_cw_slight_right    215
+        hex("0000000000003c0c7e1cee38c77fc77fee387e1c3c0c18001800180000000000") to Direction.ROUNDABOUT_6_LEFT,  // roundabout_enter_and_exit_cw_normal_right    270
+        hex("000000006000f800fc018c038c038c01fc39f83b303f303eb03fb03f00000000") to Direction.ROUNDABOUT_7_LEFT,  // roundabout_enter_and_exit_cw_sharp_right     315
+        hex("0000c003e0077007300e300e700760074003601be01fc00fe007600300000000") to Direction.ROUNDABOUT_8_LEFT,  // roundabout_enter_and_exit_cw_u_turn          360
+        // Angle-less roundabout glyphs: "generico" (enter / enter_and_exit) -> slight-right bucket
+        // (RBT3), "sair" (plain exit) -> normal-right bucket (RBT2), per Bruno's closest-arrow rule.
+        hex("00000004f00ffc1f9c3fce7f862e060e0e061c07fc03f0016000600000000000") to Direction.ROUNDABOUT_3_RIGHT,  // roundabout_enter_and_exit_ccw
+        hex("00000004f00ffc1f9c3fce7f862e060e0e061c07fc03f0016000600000000000") to Direction.ROUNDABOUT_3_RIGHT,  // roundabout_enter_ccw
+        hex("00002000f00ff83ffc39fe73746170606070e038c03f800f0006000600000000") to Direction.ROUNDABOUT_3_LEFT,  // roundabout_enter_and_exit_cw
+        hex("00002000f00ff83ffc39fe73746170606070e038c03f800f0006000600000000") to Direction.ROUNDABOUT_3_LEFT,  // roundabout_enter_cw
+        hex("000000018003c007e00ff00da0098001f003fc07180e000c001c001800000000") to Direction.ROUNDABOUT_2_RIGHT,  // roundabout_exit_ccw
+        hex("00008000c001e003f007b00f90058001c00fe03f701830003800180000000000") to Direction.ROUNDABOUT_2_LEFT,  // roundabout_exit_cw
         hex("00000000fc01fc017c38fc1cdc0f9c0780070003000300030003000300000000") to Direction.RAMP_LEFT,  // off_ramp_keep_left
         hex("00004000f03878383e38fc39fc3f383f303c1038003800380038003800000000") to Direction.RAMP_LEFT,  // off_ramp_normal_left
         hex("000000000000001e003f8033cc31ec307c303c30fc30fc300030003000000000") to Direction.RAMP_LEFT,  // off_ramp_sharp_left

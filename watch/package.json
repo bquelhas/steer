@@ -1,7 +1,7 @@
 {
   "name": "steer",
   "author": "aviation_hacker",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "keywords": [
     "pebble-app"
   ],
@@ -817,6 +817,16 @@
           "type": "bitmap",
           "name": "IMAGE_MODE_TRANSIT",
           "file": "mode_icons/mode_transit.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "IMAGE_MENU_CANCEL",
+          "file": "menu_icons/menu_cancel.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "IMAGE_MENU_LIGHT",
+          "file": "menu_icons/menu_light.png"
         }
       ]
     }

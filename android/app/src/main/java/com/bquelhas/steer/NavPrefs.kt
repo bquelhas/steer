@@ -23,6 +23,7 @@ object NavPrefs {
     private const val KEY_SPEED_LIMIT = "speed_limit"
     private const val KEY_SPEED_LIMIT_OSM = "speed_limit_osm"
     private const val KEY_UNITS = "units"
+    private const val KEY_ETA_MODE = "eta_mode"
     private const val KEY_NAV_APP = "nav_app"
     private const val KEY_DETECT_APPS = "detect_apps"
 
@@ -161,6 +162,20 @@ object NavPrefs {
 
     fun setUnitSystem(context: Context, units: UnitSystem) {
         prefs(context).edit().putInt(KEY_UNITS, units.ordinal).apply()
+    }
+
+    /**
+     * What the watch's ETA line shows: the arrival clock time or the remaining trip duration.
+     * Default [EtaMode.ARRIVAL] (unchanged behaviour — the arrival clock). Both are extracted from
+     * the nav notification's subText, so switching is purely which token we forward.
+     */
+    fun getEtaMode(context: Context): EtaMode {
+        val ord = prefs(context).getInt(KEY_ETA_MODE, EtaMode.ARRIVAL.ordinal)
+        return EtaMode.entries.getOrElse(ord) { EtaMode.ARRIVAL }
+    }
+
+    fun setEtaMode(context: Context, mode: EtaMode) {
+        prefs(context).edit().putInt(KEY_ETA_MODE, mode.ordinal).apply()
     }
 
     /**

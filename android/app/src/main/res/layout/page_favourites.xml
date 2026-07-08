@@ -34,21 +34,19 @@
             android:text="@string/nav_app_caption"
             android:textAppearance="?attr/textAppearanceBodySmall" />
 
-        <!-- Five mutually-exclusive options don't fit as a horizontal toggle row (the labels
-             get truncated), so use a Material exposed dropdown instead. -->
-        <com.google.android.material.textfield.TextInputLayout
-            android:id="@+id/navAppLayout"
-            style="@style/Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+        <!-- Clean settings-style dropdown: a tonal pill showing the current navigator with a
+             chevron; tapping opens a popup menu of the five options (a horizontal toggle row
+             truncates the labels). -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/navAppButton"
+            style="@style/Widget.Material3.Button.TonalButton"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content">
-
-            <com.google.android.material.textfield.MaterialAutoCompleteTextView
-                android:id="@+id/navAppDropdown"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:fontFamily="sans-serif-condensed"
-                android:inputType="none" />
-        </com.google.android.material.textfield.TextInputLayout>
+            android:layout_height="wrap_content"
+            android:gravity="start|center_vertical"
+            android:fontFamily="sans-serif-condensed"
+            android:textAllCaps="false"
+            app:icon="@drawable/ic_arrow_drop_down"
+            app:iconGravity="end" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnGrantOverlay"

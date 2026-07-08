@@ -25,7 +25,8 @@ import com.google.android.material.card.MaterialCardView
 import com.google.android.material.checkbox.MaterialCheckBox
 import com.google.android.material.color.DynamicColors
 import com.google.android.material.color.DynamicColorsOptions
-import com.google.android.material.textfield.MaterialAutoCompleteTextView
+import android.widget.ArrayAdapter
+import androidx.appcompat.widget.ListPopupWindow
 import com.google.android.material.textfield.TextInputEditText
 
 /**
@@ -235,6 +236,7 @@ class MainActivity : AppCompatActivity() {
 
         setupSpeedControls(root)
         setupUnitsToggle(root)
+        setupEtaToggle(root)
         setupDetectApps(root)
     }
 
@@ -341,6 +343,21 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun setupEtaToggle(root: View) {
+        val group = root.findViewById<MaterialButtonToggleGroup>(R.id.etaToggle)
+        group.check(
+            when (NavPrefs.getEtaMode(applicationContext)) {
+                EtaMode.ARRIVAL -> R.id.etaArrival
+                EtaMode.REMAINING -> R.id.etaRemaining
+            }
+        )
+        group.addOnButtonCheckedListener { _, buttonId, isChecked ->
+            if (!isChecked) return@addOnButtonCheckedListener
+            val mode = if (buttonId == R.id.etaRemaining) EtaMode.REMAINING else EtaMode.ARRIVAL
+            NavPrefs.setEtaMode(applicationContext, mode)
+        }
+    }
+
     /**
      * Multiselect of which navigator notifications the listener reads. Each checkbox maps to the
      * package(s) in the persisted detect-apps set; OsmAnd covers both the free and paid packages.
@@ -444,20 +461,34 @@ class MainActivity : AppCompatActivity() {
 
     /** Nav-app picker: which navigator opens when a favourite is started from the watch. */
     private fun setupNavAppToggle(root: View) {
-        val dropdown = root.findViewById<MaterialAutoCompleteTextView>(R.id.navAppDropdown)
-        // Index-aligned with the label array below.
+        val button = root.findViewById<MaterialButton>(R.id.navAppButton)
+        // Index-aligned with the label list below.
         val apps = listOf(NavApp.AUTO, NavApp.GOOGLE_MAPS, NavApp.OSMAND, NavApp.ORGANIC, NavApp.COMAPS)
-        val labels = arrayOf(
+        val labels = listOf(
             getString(R.string.nav_app_auto), getString(R.string.nav_app_maps),
             getString(R.string.nav_app_osmand), getString(R.string.nav_app_organic),
             getString(R.string.nav_app_comaps),
         )
-        dropdown.setSimpleItems(labels)
-        val currentIndex = apps.indexOf(NavPrefs.getNavApp(applicationContext)).coerceAtLeast(0)
-        // false = don't filter the list down to the current text on next open.
-        dropdown.setText(labels[currentIndex], false)
-        dropdown.setOnItemClickListener { _, _, position, _ ->
-            NavPrefs.setNavApp(applicationContext, apps[position])
+        fun refreshLabel() {
+            val idx = apps.indexOf(NavPrefs.getNavApp(applicationContext)).coerceAtLeast(0)
+            button.text = labels[idx]
+        }
+        refreshLabel()
+        button.setOnClickListener { anchor ->
+            // ListPopupWindow (not PopupMenu) so we control the width and the row style:
+            // width matches the trigger button, and item_nav_app_dropdown reuses the same
+            // sans-serif-condensed font, so the list and the selected value look identical.
+            val popup = ListPopupWindow(this)
+            popup.anchorView = anchor
+            popup.width = anchor.width
+            popup.isModal = true
+            popup.setAdapter(ArrayAdapter(this, R.layout.item_nav_app_dropdown, labels))
+            popup.setOnItemClickListener { _, _, position, _ ->
+                NavPrefs.setNavApp(applicationContext, apps[position])
+                refreshLabel()
+                popup.dismiss()
+            }
+            popup.show()
         }
     }
 

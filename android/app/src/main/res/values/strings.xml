@@ -54,11 +54,13 @@
     <string name="units_auto">Automatic</string>
     <string name="units_metric">km</string>
     <string name="units_imperial">mi</string>
+    <string name="eta_label">ETA display</string>
+    <string name="eta_arrival">Arrival time</string>
+    <string name="eta_remaining">Time left</string>
     <string name="open_developer">Test mode</string>
     <string name="developer_title">Test mode</string>
     <string name="preview_distance">200 M</string>
     <string name="preview_instruction">Junction 1 A20 / N114 A2 A6 A13 Santarém</string>
-    <string name="preview_caption">Preview of the watch screen</string>
     <string name="color_label">Watch background colour</string>
     <string name="preview_icon_desc">Maneuver icon</string>
     <string name="favorites_title">Favourite destinations</string>
@@ -107,9 +109,7 @@
     <string name="tab_developer">Test</string>
 
     <!-- Customization extras -->
-    <string name="color_caption">The phone app also tints itself with this colour.</string>
     <string name="detect_apps_label">Navigation apps to read</string>
-    <string name="detect_apps_caption">Steer only reads maneuvers from the apps you tick here. Waze is launch-only (its notification hides the maneuver).</string>
     <string name="detect_maps">Google Maps</string>
     <string name="detect_osmand">OsmAnd</string>
     <string name="detect_comaps">CoMaps</string>

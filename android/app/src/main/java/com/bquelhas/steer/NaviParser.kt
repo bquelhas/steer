@@ -12,6 +12,14 @@ enum class UnitSystem {
     IMPERIAL,
 }
 
+/** What the watch's ETA field shows during navigation. */
+enum class EtaMode {
+    /** Arrival clock time, e.g. "20:09". */
+    ARRIVAL,
+    /** Remaining trip duration, e.g. "6 min" / "1 h 6 min". */
+    REMAINING,
+}
+
 /**
  * Turns a navigation notification (title + text) into a [NaviData].
  *
@@ -52,9 +60,10 @@ object NaviParser {
         text: String?,
         subText: String? = null,
         units: UnitSystem = UnitSystem.AUTO,
+        etaMode: EtaMode = EtaMode.ARRIVAL,
     ): NaviData? {
         if (pkg !in SUPPORTED) return null
-        val eta = extractEta(subText)
+        val eta = extractEtaField(subText, etaMode)
         if (pkg == PKG_OSMAND || pkg == PKG_OSMAND_FREE) return parseOsmand(title, text, eta, units)
         if (pkg in ICON_ONLY) return parseIconOnly(title, text, eta, units)
 
@@ -79,6 +88,25 @@ object NaviParser {
         val s = subText?.trim().orEmpty()
         if (s.isEmpty()) return null
         return CLOCK_RE.findAll(s).lastOrNull()?.value?.trim()
+    }
+
+    /**
+     * Extracts the remaining trip duration from the subText, e.g.
+     * "6 min · 1.7 km · 20:09" -> "6 min", "1 h 6 min · 84 km · 20:09" -> "1 h 6 min".
+     * Google Maps puts the duration first; it's the only "h"/"min" token (the distance uses
+     * km/m/mi). Returns null when no duration token is present.
+     */
+    fun extractRemaining(subText: String?): String? {
+        val s = subText?.trim().orEmpty()
+        if (s.isEmpty()) return null
+        return REMAINING_RE.find(s)?.value?.replace(WHITESPACE_RE, " ")?.trim()
+    }
+
+    /** Picks the ETA field the watch should display for the chosen [mode], with a graceful fallback. */
+    fun extractEtaField(subText: String?, mode: EtaMode): String? = when (mode) {
+        EtaMode.ARRIVAL -> extractEta(subText)
+        // If a route has no duration token, fall back to the arrival clock rather than showing nothing.
+        EtaMode.REMAINING -> extractRemaining(subText) ?: extractEta(subText)
     }
 
     /**
@@ -280,6 +308,9 @@ object NaviParser {
     private val TRAILING_DISTANCE_RE = Regex("""\s*\d+(?:[.,]\d+)?\s*(?:$UNIT_ALT)\b\s*$""", RegexOption.IGNORE_CASE)
     // A clock-time token (the arrival/ETA time in the subText): "20:09", "8:09 PM".
     private val CLOCK_RE = Regex("""\d{1,2}:\d{2}(?:\s?[AaPp][Mm])?""")
+    // The remaining-duration token: "6 min", "1 h", "1 h 6 min" (Maps uses "h"/"min" in EN and PT).
+    private val REMAINING_RE = Regex("""\d+\s*h(?:\s*\d+\s*min)?|\d+\s*min""", RegexOption.IGNORE_CASE)
+    private val WHITESPACE_RE = Regex("""\s+""")
     private val EXIT_RE = Regex("""(?:(\d+)\s*(?:st|nd|rd|th|º|ª|a)?\s*(?:exit|saída|saida)|(?:exit|saída|saida)\s*(?:n[º.]?\s*|número\s*)?(\d+))""", RegexOption.IGNORE_CASE)
 
     private fun isLeft(s: String): Boolean = s.containsAny("left", "esquerda")

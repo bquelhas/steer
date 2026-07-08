@@ -59,6 +59,27 @@ static GColor prv_resolve_bg_color(GColor raw_bg) {
 #endif
 }
 
+// Menus (favourites / mode / nav actions) always draw a WHITE selection bar with
+// black text, so the highlighted row stays legible on any app background. The
+// non-selected rows use the app background colour — EXCEPT when that background is
+// white: a white selection on a white menu would vanish, so the menu falls back to a
+// black background (with white text) in that case.
+static GColor prv_menu_bg_color(void) {
+  GColor bg = prv_resolve_bg_color(s_bg_color);
+  if (gcolor_equal(bg, GColorWhite)) {
+    return GColorBlack;
+  }
+  return bg;
+}
+static GColor prv_menu_fg_color(void) {
+  GColor bg = prv_menu_bg_color();
+#if defined(PBL_COLOR)
+  return prv_distance_fg_for_bg(bg);
+#else
+  return gcolor_equal(bg, GColorBlack) ? GColorWhite : GColorBlack;
+#endif
+}
+
 // Maneuver enum (NAV_TURN index)
 typedef enum {
   DIR_ARRIVE=0, DIR_ARRIVE_LEFT, DIR_ARRIVE_RIGHT, DIR_DEPART,
@@ -85,7 +106,7 @@ static Layer *s_speed_sign_layer;
 // State Variables
 static char s_distance_text[32] = "";
 static char s_street_text[128] = "Waiting for signal...";
-static char s_eta_text[16] = "ETA: --:--";
+static char s_eta_text[16] = "--:--";
 static char s_gps_text[32] = "GPS: ---";
 static int s_maneuver_index = -1;  // -1 means no active maneuver, show chevron
 static bool s_vibe_on_turn = true;
@@ -128,6 +149,10 @@ static MenuLayer *s_favorites_menu_layer = NULL;
 static Window *s_mode_window = NULL;
 static MenuLayer *s_mode_menu_layer = NULL;
 static uint8_t s_pending_fav_index = 0;
+
+// In-navigation actions menu (opened with SELECT while a route is active): Cancel + Light.
+static Window *s_nav_menu_window = NULL;
+static MenuLayer *s_nav_menu_menu_layer = NULL;
 
 static const uint32_t s_pdc_resource_ids[] = {
   RESOURCE_ID_PDC_ICON_0, RESOURCE_ID_PDC_ICON_1, RESOURCE_ID_PDC_ICON_2, RESOURCE_ID_PDC_ICON_3,
@@ -2230,7 +2255,9 @@ static void inbox_received_handler(DictionaryIterator *iterator, void *context) 
   // Check ETA
   Tuple *eta_t = dict_find(iterator, MESSAGE_KEY_NAV_ETA);
   if (eta_t && eta_t->type == TUPLE_CSTRING) {
-    snprintf(s_eta_text, sizeof(s_eta_text), "ETA: %s", eta_t->value->cstring);
+    // Show the phone's ETA string verbatim: the Android side chooses whether it's the
+    // arrival clock ("20:09") or the remaining time ("6 min"), so no "ETA:" prefix here.
+    snprintf(s_eta_text, sizeof(s_eta_text), "%s", eta_t->value->cstring);
     needs_update = true;
     APP_LOG(APP_LOG_LEVEL_DEBUG, "Parsed NAV_ETA: %s", eta_t->value->cstring);
   }
@@ -2348,7 +2375,7 @@ static void inbox_received_handler(DictionaryIterator *iterator, void *context) 
     s_maneuver_index = -1;
     s_distance_text[0] = '\0';
     prv_set_waiting_text();
-    snprintf(s_eta_text, sizeof(s_eta_text), "ETA: --:--");
+    snprintf(s_eta_text, sizeof(s_eta_text), "--:--");
     s_bg_color = NAV_SCREEN_BG;
     s_has_forwarded_icon = false;
     s_speed_alert_active = false;
@@ -2377,17 +2404,10 @@ static void outbox_sent_handler(DictionaryIterator *iterator, void *context) {
 
 // Click Handlers (Back to exit and notify companion, Select to manually invert theme for testing)
 static void prv_back_click_handler(ClickRecognizerRef recognizer, void *context) {
-  APP_LOG(APP_LOG_LEVEL_INFO, "Back button clicked - sending NAV_CANCEL");
-  
-  // Send cancel command to phone
-  DictionaryIterator *iter;
-  app_message_outbox_begin(&iter);
-  if (iter) {
-    dict_write_uint8(iter, MESSAGE_KEY_NAV_CANCEL, 1);
-    app_message_outbox_send();
-  }
-  
-  // Pop the window to exit the app
+  // BACK only exits the app; it must NOT cancel navigation. Cancelling is done explicitly
+  // from the SELECT actions menu ("Cancel"). Leaving the app keeps the route running on the
+  // phone so re-opening Steer resumes showing turns.
+  APP_LOG(APP_LOG_LEVEL_INFO, "Back button clicked - exiting app (navigation left running)");
   window_stack_pop(true);
 }
 
@@ -2494,10 +2514,8 @@ static void prv_mode_window_load(Window *window) {
     .select_click = prv_mode_select_click,
   });
   
-  GColor bg_resolved = prv_resolve_bg_color(s_bg_color);
-  GColor fg_color = prv_distance_fg_for_bg(bg_resolved);
-  menu_layer_set_normal_colors(s_mode_menu_layer, bg_resolved, fg_color);
-  menu_layer_set_highlight_colors(s_mode_menu_layer, fg_color, bg_resolved);
+  menu_layer_set_normal_colors(s_mode_menu_layer, prv_menu_bg_color(), prv_menu_fg_color());
+  menu_layer_set_highlight_colors(s_mode_menu_layer, GColorWhite, GColorBlack);
   
   menu_layer_set_click_config_onto_window(s_mode_menu_layer, window);
   layer_add_child(window_layer, menu_layer_get_layer(s_mode_menu_layer));
@@ -2578,10 +2596,8 @@ static void prv_favorites_window_load(Window *window) {
     .select_click = prv_menu_select_click,
   });
   
-  GColor bg_resolved = prv_resolve_bg_color(s_bg_color);
-  GColor fg_color = prv_distance_fg_for_bg(bg_resolved);
-  menu_layer_set_normal_colors(s_favorites_menu_layer, bg_resolved, fg_color);
-  menu_layer_set_highlight_colors(s_favorites_menu_layer, fg_color, bg_resolved);
+  menu_layer_set_normal_colors(s_favorites_menu_layer, prv_menu_bg_color(), prv_menu_fg_color());
+  menu_layer_set_highlight_colors(s_favorites_menu_layer, GColorWhite, GColorBlack);
   
   menu_layer_set_click_config_onto_window(s_favorites_menu_layer, window);
   layer_add_child(window_layer, menu_layer_get_layer(s_favorites_menu_layer));
@@ -2598,11 +2614,121 @@ static void prv_show_favorites_menu(void) {
   }
 }
 
-static void prv_select_click_handler(ClickRecognizerRef recognizer, void *context) {
-  if (s_maneuver_index >= 0) {
-    APP_LOG(APP_LOG_LEVEL_INFO, "Select button clicked - toggling backlight mode");
+// --- In-navigation actions menu (SELECT while a route is active): Cancel + Light ---
+
+static uint16_t prv_nav_menu_get_num_rows(MenuLayer *menu_layer, uint16_t section_index, void *context) {
+  return 2;
+}
+
+static void prv_nav_menu_draw_row(GContext *ctx, const Layer *cell_layer, MenuIndex *cell_index, void *context) {
+  GRect bounds = layer_get_bounds(cell_layer);
+  bool is_highlighted = menu_cell_layer_is_highlighted(cell_layer);
+
+  GColor bg_resolved = prv_menu_bg_color();
+  GColor fg_color = prv_menu_fg_color();
+
+  if (is_highlighted) {
+    // Selection bar is ALWAYS white with black text, legible on any app colour.
+    graphics_context_set_fill_color(ctx, GColorWhite);
+    graphics_fill_rect(ctx, bounds, 0, GCornerNone);
+    graphics_context_set_text_color(ctx, GColorBlack);
+  } else {
+    graphics_context_set_fill_color(ctx, bg_resolved);
+    graphics_fill_rect(ctx, bounds, 0, GCornerNone);
+    graphics_context_set_text_color(ctx, fg_color);
+  }
+
+  const char *text = "";
+  uint32_t res_id = 0;
+  switch (cell_index->row) {
+    case 0:
+      text = s_backlight_always_on ? prv_tr("Light off", "Luz desligada")
+                                   : prv_tr("Light on", "Luz ligada");
+      res_id = RESOURCE_ID_IMAGE_MENU_LIGHT;
+      break;
+    case 1:
+      text = prv_tr("Cancel", "Cancelar");
+      res_id = RESOURCE_ID_IMAGE_MENU_CANCEL;
+      break;
+  }
+
+  GRect text_bounds = GRect(40, (bounds.size.h - 26) / 2, bounds.size.w - 50, 26);
+
+  GBitmap *bmp = gbitmap_create_with_resource(res_id);
+  if (bmp) {
+    graphics_context_set_compositing_mode(ctx, GCompOpSet);
+    graphics_draw_bitmap_in_rect(ctx, bmp, GRect(8, 9, 25, 25));
+    gbitmap_destroy(bmp);
+  }
+
+  GFont font = fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD);
+  graphics_draw_text(ctx, text, font, text_bounds, GTextOverflowModeTrailingEllipsis, GTextAlignmentLeft, NULL);
+}
+
+static void prv_nav_menu_select_click(MenuLayer *menu_layer, MenuIndex *cell_index, void *context) {
+  if (cell_index->row == 0) {
+    // Toggle the always-on backlight.
+    APP_LOG(APP_LOG_LEVEL_INFO, "Nav menu: toggle backlight");
     s_backlight_always_on = !s_backlight_always_on;
     prv_update_ui();
+    window_stack_pop(true);
+  } else {
+    // Cancel navigation: tell the phone to stop, and reset the local nav state (mirrors the
+    // inbound NAV_CANCEL handler) so the watch returns to the waiting screen.
+    APP_LOG(APP_LOG_LEVEL_INFO, "Nav menu: cancel navigation");
+    DictionaryIterator *iter;
+    app_message_outbox_begin(&iter);
+    if (iter) {
+      dict_write_uint8(iter, MESSAGE_KEY_NAV_CANCEL, 1);
+      app_message_outbox_send();
+    }
+    s_maneuver_index = -1;
+    s_distance_text[0] = '\0';
+    prv_set_waiting_text();
+    snprintf(s_eta_text, sizeof(s_eta_text), "--:--");
+    s_bg_color = NAV_SCREEN_BG;
+    s_has_forwarded_icon = false;
+    s_speed_alert_active = false;
+    s_current_speed = -1;
+    prv_update_ui();
+    window_stack_pop(true); // close the menu, back to the (now waiting) nav window
+  }
+}
+
+static void prv_nav_menu_window_load(Window *window) {
+  Layer *window_layer = window_get_root_layer(window);
+  GRect bounds = layer_get_bounds(window_layer);
+
+  s_nav_menu_menu_layer = menu_layer_create(bounds);
+  menu_layer_set_callbacks(s_nav_menu_menu_layer, NULL, (MenuLayerCallbacks) {
+    .get_num_rows = prv_nav_menu_get_num_rows,
+    .get_cell_height = prv_get_cell_height,
+    .draw_row = prv_nav_menu_draw_row,
+    .select_click = prv_nav_menu_select_click,
+  });
+
+  menu_layer_set_normal_colors(s_nav_menu_menu_layer, prv_menu_bg_color(), prv_menu_fg_color());
+  menu_layer_set_highlight_colors(s_nav_menu_menu_layer, GColorWhite, GColorBlack);
+
+  menu_layer_set_click_config_onto_window(s_nav_menu_menu_layer, window);
+  layer_add_child(window_layer, menu_layer_get_layer(s_nav_menu_menu_layer));
+}
+
+static void prv_nav_menu_window_unload(Window *window) {
+  menu_layer_destroy(s_nav_menu_menu_layer);
+  s_nav_menu_menu_layer = NULL;
+}
+
+static void prv_show_nav_menu(void) {
+  if (s_nav_menu_window) {
+    window_stack_push(s_nav_menu_window, true);
+  }
+}
+
+static void prv_select_click_handler(ClickRecognizerRef recognizer, void *context) {
+  if (s_maneuver_index >= 0) {
+    APP_LOG(APP_LOG_LEVEL_INFO, "Select button clicked - opening nav actions menu");
+    prv_show_nav_menu();
   } else {
     APP_LOG(APP_LOG_LEVEL_INFO, "Select button clicked - opening favorites menu");
     prv_show_favorites_menu();
@@ -2732,6 +2858,12 @@ static void prv_init(void) {
     .unload = prv_mode_window_unload,
   });
 
+  s_nav_menu_window = window_create();
+  window_set_window_handlers(s_nav_menu_window, (WindowHandlers) {
+    .load = prv_nav_menu_window_load,
+    .unload = prv_nav_menu_window_unload,
+  });
+
   // Open AppMessage inbox and outbox
   app_message_register_inbox_received(inbox_received_handler);
   app_message_register_inbox_dropped(inbox_dropped_handler);
@@ -2775,6 +2907,9 @@ static void prv_deinit(void) {
   }
   if (s_mode_window) {
     window_destroy(s_mode_window);
+  }
+  if (s_nav_menu_window) {
+    window_destroy(s_nav_menu_window);
   }
 }
 

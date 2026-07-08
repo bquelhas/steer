@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android 12+ (API 31): the icon background uses the device's Material You dynamic
+     colour, so it re-tints to match the phone theme/wallpaper. The white car foreground
+     stays legible on any accent shade. The monochrome layer feeds Android 13+ themed
+     icons. API 26-30 keep the fixed red background in mipmap-anydpi-v26. -->
+<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+    <background android:drawable="@android:color/system_accent1_600" />
+    <foreground android:drawable="@drawable/ic_launcher_foreground" />
+    <monochrome android:drawable="@drawable/ic_launcher_foreground" />
+</adaptive-icon>

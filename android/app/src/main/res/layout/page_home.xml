@@ -140,15 +140,6 @@
             </RelativeLayout>
         </com.google.android.material.card.MaterialCardView>
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:layout_marginBottom="8dp"
-            android:fontFamily="sans-serif-condensed"
-            android:text="@string/preview_caption"
-            android:textAppearance="?attr/textAppearanceBodySmall" />
-
         <!-- Watch background color -->
         <TextView
             android:layout_width="wrap_content"
@@ -160,14 +151,6 @@
             android:textColor="?attr/colorPrimary"
             android:textStyle="bold"
             android:textAppearance="?attr/textAppearanceTitleSmall" />
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="8dp"
-            android:fontFamily="sans-serif-condensed"
-            android:text="@string/color_caption"
-            android:textAppearance="?attr/textAppearanceBodySmall" />
 
         <LinearLayout
             android:id="@+id/colorSwatches"
@@ -423,25 +406,56 @@
                 android:text="@string/units_imperial" />
         </com.google.android.material.button.MaterialButtonToggleGroup>
 
+        <!-- ETA line: arrival clock vs remaining trip time -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:layout_marginBottom="8dp"
+            android:fontFamily="sans-serif-condensed"
+            android:text="@string/eta_label"
+            android:textColor="?attr/colorPrimary"
+            android:textStyle="bold"
+            android:textAppearance="?attr/textAppearanceTitleSmall" />
+
+        <com.google.android.material.button.MaterialButtonToggleGroup
+            android:id="@+id/etaToggle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="20dp"
+            app:singleSelection="true"
+            app:selectionRequired="true">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/etaArrival"
+                style="?attr/materialButtonOutlinedStyle"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:fontFamily="sans-serif-condensed"
+                android:text="@string/eta_arrival" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/etaRemaining"
+                style="?attr/materialButtonOutlinedStyle"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:fontFamily="sans-serif-condensed"
+                android:text="@string/eta_remaining" />
+        </com.google.android.material.button.MaterialButtonToggleGroup>
+
         <!-- Which navigator notifications to read (multiselect) -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
-            android:layout_marginBottom="4dp"
+            android:layout_marginBottom="8dp"
             android:fontFamily="sans-serif-condensed"
             android:text="@string/detect_apps_label"
             android:textColor="?attr/colorPrimary"
             android:textStyle="bold"
             android:textAppearance="?attr/textAppearanceTitleSmall" />
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="8dp"
-            android:fontFamily="sans-serif-condensed"
-            android:text="@string/detect_apps_caption"
-            android:textAppearance="?attr/textAppearanceBodySmall" />
 
         <com.google.android.material.checkbox.MaterialCheckBox
             android:id="@+id/chkDetectMaps"

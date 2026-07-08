@@ -74,8 +74,12 @@ object NaviParser {
         val distance = extractDistance(t, units)
         val instruction = pickInstruction(title, text, t)
         val composed = compose(distance, instruction)
-        return NaviData(direction, composed, maneuverFromText = hasManeuverKeyword(t), eta = eta)
+        return NaviData(direction, composed, maneuverFromText = hasManeuverKeyword(t), eta = eta,
+            distanceMeters = distanceMetersOf(t))
     }
+
+    /** Numeric metres of the first distance token in [s], or null. For [VibePlanner]. */
+    fun distanceMetersOf(s: String?): Double? = s?.let { parseDistanceMeters(it)?.meters }
 
     /**
      * Extracts the arrival clock time from the notification subText, e.g.
@@ -144,7 +148,8 @@ object NaviParser {
         val instruction = (if (big.isNotEmpty()) stripTrailingDistance(big)
             else titleStr.substringAfter('•', titleStr).trim())
             .ifBlank { combined }
-        return NaviData(direction, compose(distance, instruction), maneuverFromText = hasManeuverKeyword(combined), eta = eta)
+        return NaviData(direction, compose(distance, instruction), maneuverFromText = hasManeuverKeyword(combined), eta = eta,
+            distanceMeters = distanceMetersOf(titleStr) ?: distanceMetersOf(big))
     }
 
     /**
@@ -159,7 +164,8 @@ object NaviParser {
         val street = text?.trim().orEmpty()
         val instruction = street.ifBlank { title?.trim().orEmpty() }
         if (dist == null && instruction.isEmpty()) return null
-        return NaviData(Direction.STRAIGHT, compose(dist, instruction), maneuverFromText = false, eta = eta)
+        return NaviData(Direction.STRAIGHT, compose(dist, instruction), maneuverFromText = false, eta = eta,
+            distanceMeters = distanceMetersOf(title?.trim()))
     }
 
     private fun stripTrailingDistance(s: String): String =

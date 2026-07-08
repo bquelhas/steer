@@ -39,4 +39,15 @@
         android:layout_height="wrap_content"
         android:contentDescription="@string/fav_edit"
         app:icon="@android:drawable/ic_menu_edit" />
+
+    <!-- Drag affordance: grabbing it starts the reorder immediately (no long-press). -->
+    <ImageView
+        android:id="@+id/favDragHandle"
+        android:layout_width="40dp"
+        android:layout_height="48dp"
+        android:contentDescription="@string/fav_reorder"
+        android:paddingStart="8dp"
+        android:paddingEnd="8dp"
+        android:scaleType="centerInside"
+        android:src="@drawable/ic_drag_handle" />
 </LinearLayout>

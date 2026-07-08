@@ -32,6 +32,10 @@ object SpeedProvider {
     // Hysteresis (km/h) so the alert doesn't flap right at the limit boundary.
     private const val ALERT_HYSTERESIS_KMH = 3
 
+    // Freshness window for [currentSpeedKmh]: a fix older than this no longer reflects "now"
+    // (tunnel, GPS drop) and must not drive the smart-vibration timing.
+    private const val SPEED_FRESH_MS = 6000L
+
     private var manager: LocationManager? = null
     private var listener: LocationListener? = null
     private var running = false
@@ -40,6 +44,19 @@ object SpeedProvider {
     private var lastGateBlockedLog = -1
     private var alertActive = false
     private var lastLimit = NavPrefs.DEFAULT_SPEED_LIMIT
+
+    @Volatile private var lastFixKmh = -1
+    @Volatile private var lastFixAtMs = 0L
+
+    /**
+     * Latest GPS speed in km/h for [VibePlanner], or -1 when not running, no fix yet, or
+     * the last fix went stale. Independent of the speedometer/alert display gates.
+     */
+    fun currentSpeedKmh(): Int {
+        if (!running || lastFixKmh < 0) return -1
+        if (System.currentTimeMillis() - lastFixAtMs > SPEED_FRESH_MS) return -1
+        return lastFixKmh
+    }
 
     fun hasLocationPermission(context: Context): Boolean =
         ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) ==
@@ -50,8 +67,11 @@ object SpeedProvider {
     /** Begins listening for GPS fixes and relaying speed. No-op if already running. */
     fun start(context: Context) {
         if (running) return
-        if (!NavPrefs.isSpeedometerEnabled(context) && !NavPrefs.isSpeedAlert(context)) {
-            Log.d(TAG, "start skipped: speedometer + alert both off")
+        // Smart vibration also needs the live speed, so GPS runs whenever any of the three
+        // consumers is on. Marginal battery cost: the navigator app already holds the GPS hot.
+        if (!NavPrefs.isSpeedometerEnabled(context) && !NavPrefs.isSpeedAlert(context) &&
+            !NavPrefs.isVibeOnTurn(context)) {
+            Log.d(TAG, "start skipped: speedometer + alert + vibe all off")
             return
         }
         if (!hasLocationPermission(context)) {
@@ -81,6 +101,7 @@ object SpeedProvider {
             listener = l
             running = true
             lastSentSpeed = -1
+            lastFixKmh = -1
             alertActive = false
             Log.i(TAG, "started on $provider")
         } catch (e: SecurityException) {
@@ -103,6 +124,7 @@ object SpeedProvider {
         }
         OsmSpeedLimit.reset()
         lastSentSpeed = -1
+        lastFixKmh = -1
         Log.i(TAG, "stopped")
     }
 
@@ -110,6 +132,8 @@ object SpeedProvider {
         if (!location.hasSpeed()) return
         val limit = effectiveLimit(context, location)
         val kmh = Math.round(location.speed * 3.6f)
+        lastFixKmh = if (kmh < MIN_VALID_SPEED_KMH) 0 else kmh.coerceIn(0, 255)
+        lastFixAtMs = System.currentTimeMillis()
         if (kmh < MIN_VALID_SPEED_KMH) {
             // Treat as stationary: report 0 once so the watch face zeroes out.
             maybeSendSpeed(context, 0)

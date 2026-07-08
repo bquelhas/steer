@@ -17,7 +17,7 @@
     <string name="icon_prev">◀</string>
     <string name="icon_next">▶</string>
     <string name="autolaunch_label">Open the app on Pebble when navigating</string>
-    <string name="vibe_label">Vibrate the watch on each maneuver</string>
+    <string name="vibe_label">Vibrate when a maneuver is coming up</string>
     <string name="speedometer_label">Show speed on the watch</string>
     <string name="speedometer_caption">Off, always shown, or only when the watch route is a bicycle trip.</string>
     <string name="speedometer_off">Off</string>
@@ -76,6 +76,7 @@
     <string name="fav_choose_nav">Navigate with…</string>
     <string name="fav_no_nav_app">No compatible navigation app installed</string>
     <string name="fav_edit">Edit favourite</string>
+    <string name="fav_reorder">Drag to reorder</string>
     <string name="fav_icon_label">Icon</string>
     <string name="fav_icon_change">Change</string>
     <string name="fav_icon_pick">Choose an icon</string>

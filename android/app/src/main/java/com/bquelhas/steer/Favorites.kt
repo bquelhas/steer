@@ -65,4 +65,7 @@ object FavoritesStore {
             save(context, list)
         }
     }
+
+    /** Persists a full reordered list (drag-to-reorder in the favourites page). */
+    fun replaceAll(context: Context, list: List<Favorite>) = save(context, list)
 }

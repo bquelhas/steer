@@ -64,6 +64,20 @@ class NaviParserTest {
         assertEquals("2.5 km", NaviParser.extractDistance("Continue por 2,5 km"))
     }
 
+    // --- numeric distance for the smart-vibration planner ---
+
+    @Test fun numericDistanceMetersExposed() {
+        assertEquals(400.0, NaviParser.distanceMetersOf("In 400 m, turn left")!!, 0.01)
+        assertEquals(2500.0, NaviParser.distanceMetersOf("Continue por 2,5 km")!!, 0.01)
+        assertEquals(482.8, NaviParser.distanceMetersOf("In 0.3 mi, turn left")!!, 0.1)
+        assertEquals(null, NaviParser.distanceMetersOf("Turn left"))
+    }
+
+    @Test fun parsedNaviDataCarriesDistanceMeters() {
+        assertEquals(300.0, gmaps("300 m", "R. de São Dinis")!!.distanceMeters!!, 0.01)
+        assertEquals(null, gmaps("Turn left", null)!!.distanceMeters)
+    }
+
     // --- international units ---
 
     @Test fun autoKeepsImperialSource() {

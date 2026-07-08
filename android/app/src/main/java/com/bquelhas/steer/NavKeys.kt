@@ -27,9 +27,9 @@ object NavKeys {
     const val NAV_BG_COLOR = 8      // uint32: watch background color packed 0xRRGGBB. The watch
                                     // (GColorFromRGB) sets it as the card background and auto-picks
                                     // black/white text by luminance. Sent with each nav frame.
-    const val NAV_VIBE_ON_TURN = 9  // uint8: 0 disabled / 1 enabled. Settings sync — the watch
-                                    // only buzzes on a new maneuver when this is 1. Sent with each
-                                    // nav frame and immediately when the user toggles the setting.
+    const val NAV_VIBE_ON_TURN = 9  // uint8: 0 disabled / 1 enabled. Settings sync — gates whether
+                                    // the watch executes NAV_VIBE_NOW buzzes. Sent with each nav
+                                    // frame and immediately when the user toggles the setting.
     const val NAV_SPEED_ALERT = 10  // uint8: 0 normal / 1 speed limit exceeded. When 1 the watch
                                     // takes over the WHOLE screen with a speed-limit sign (see
                                     // NAV_SPEED_LIMIT) + a single long vibration; clears back to the
@@ -59,5 +59,10 @@ object NavKeys {
                                     // favorite is launched, sent alongside NAV_TRIGGER_ROUTE. 0 car,
                                     // 1 bicycle, 2 pedestrian, 3 transit (see TravelMode). The phone
                                     // appends the matching per-app routing parameter when launching.
+    const val NAV_VIBE_NOW = 20     // uint8: buzz NOW. The phone computes when the "get ready"
+                                    // warning is due ([VibePlanner]: time-to-maneuver from GPS
+                                    // speed, with segment-length and legacy fallbacks) and fires
+                                    // this once per maneuver; the watch just executes the pulse
+                                    // (still gated by NAV_VIBE_ON_TURN as a safety).
     const val NAV_CANCEL = 99       // uint8: navigation stopped / clear display
 }

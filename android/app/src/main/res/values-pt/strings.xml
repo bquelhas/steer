@@ -17,7 +17,7 @@
     <string name="icon_prev">◀</string>
     <string name="icon_next">▶</string>
     <string name="autolaunch_label">Abrir app no Pebble ao navegar</string>
-    <string name="vibe_label">Vibrar no relógio a cada manobra</string>
+    <string name="vibe_label">Vibrar ao aproximar-se da manobra</string>
     <string name="speedometer_label">Mostrar velocidade no relógio</string>
     <string name="speedometer_caption">Escolhe em que modos o relógio mostra a velocidade atual.</string>
     <string name="mode_car">Carro</string>
@@ -73,6 +73,7 @@
     <string name="fav_choose_nav">Navegar com…</string>
     <string name="fav_no_nav_app">Nenhuma app de navegação compatível instalada</string>
     <string name="fav_edit">Editar favorito</string>
+    <string name="fav_reorder">Arrastar para reordenar</string>
     <string name="fav_icon_label">Ícone</string>
     <string name="fav_icon_change">Mudar</string>
     <string name="fav_icon_pick">Escolher ícone</string>

@@ -16,6 +16,12 @@ data class NaviData(
     val maneuverFromText: Boolean = true,
     /** Arrival clock time ("20:09") parsed from the notification subText, or null. */
     val eta: String? = null,
+    /**
+     * Distance to the maneuver in metres, parsed from the same token embedded in
+     * [instructionText], or null when the notification carried no distance. Feeds
+     * [VibePlanner]'s smart-vibration timing; never displayed directly.
+     */
+    val distanceMeters: Double? = null,
 ) {
     val directionId: Int get() = direction.id
 }

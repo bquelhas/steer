@@ -2219,18 +2219,25 @@ static void inbox_received_handler(DictionaryIterator *iterator, void *context) 
     APP_LOG(APP_LOG_LEVEL_DEBUG, "Parsed Distance: %s, Street: %s", s_distance_text, s_street_text);
   }
 
-  // Check turn index
+  // Check turn index. No buzz here: the phone computes WHEN a vibration is needed
+  // (time/distance to the maneuver) and commands it explicitly via NAV_VIBE_NOW.
   Tuple *turn_t = dict_find(iterator, MESSAGE_KEY_NAV_TURN);
   if (turn_t) {
     int32_t new_maneuver = turn_t->value->int32;
     if (new_maneuver != s_maneuver_index) {
-      if (new_maneuver >= 0 && s_vibe_on_turn) {
-        vibes_double_pulse();
-      }
       s_maneuver_index = new_maneuver;
       needs_update = true;
       APP_LOG(APP_LOG_LEVEL_DEBUG, "Parsed NAV_TURN: %d", s_maneuver_index);
     }
+  }
+
+  // Smart vibration: the phone fires this once per maneuver when the "get ready"
+  // moment arrives. s_vibe_on_turn stays as a gate so a queued buzz can't fire
+  // right after the user disables the setting.
+  Tuple *vibe_now_t = dict_find(iterator, MESSAGE_KEY_NAV_VIBE_NOW);
+  if (vibe_now_t && s_vibe_on_turn) {
+    vibes_double_pulse();
+    APP_LOG(APP_LOG_LEVEL_INFO, "NAV_VIBE_NOW: buzz");
   }
 
   // Check invert color (theme)

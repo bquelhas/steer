@@ -63,7 +63,7 @@ class MainActivity : AppCompatActivity() {
     private var colorSwatches: LinearLayout? = null
     private var btnGrantLocation: MaterialButton? = null
     // Favourites
-    private var favoritesList: LinearLayout? = null
+    private var favoritesList: RecyclerView? = null
     private var favEmpty: TextView? = null
     private var btnGrantOverlay: MaterialButton? = null
     private var overlayCaption: TextView? = null
@@ -438,7 +438,11 @@ class MainActivity : AppCompatActivity() {
     // --- Favourites page ---
 
     private fun bindFavouritesPage(root: View) {
-        favoritesList = root.findViewById(R.id.favoritesList)
+        favoritesList = root.findViewById<RecyclerView>(R.id.favoritesList).apply {
+            layoutManager = androidx.recyclerview.widget.LinearLayoutManager(this@MainActivity)
+            isNestedScrollingEnabled = false // the page's NestedScrollView owns the scroll
+            favDragHelper.attachToRecyclerView(this)
+        }
         favEmpty = root.findViewById(R.id.favEmpty)
         btnGrantOverlay = root.findViewById(R.id.btnGrantOverlay)
         overlayCaption = root.findViewById(R.id.overlayCaption)
@@ -493,28 +497,82 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun renderFavorites() {
-        val container = favoritesList ?: return
-        container.removeAllViews()
+        val rv = favoritesList ?: return
         val favs = FavoritesStore.all(applicationContext)
         favEmpty?.visibility = if (favs.isEmpty()) View.VISIBLE else View.GONE
-
-        val inflater = LayoutInflater.from(this)
-        favs.forEachIndexed { index, fav ->
-            val row = inflater.inflate(R.layout.item_favorite, container, false)
-            row.findViewById<ImageView>(R.id.favIcon)
-                .setImageResource(FavIcons.drawableRes(applicationContext, fav.icon))
-            row.findViewById<TextView>(R.id.favLabel).text = fav.label
-            // Tap the row or the pencil to open the editor.
-            row.findViewById<View>(R.id.favRow).setOnClickListener { showFavoriteEditor(index, fav) }
-            row.findViewById<MaterialButton>(R.id.btnEditFav)
-                .setOnClickListener { showFavoriteEditor(index, fav) }
-            container.addView(row)
-        }
+        rv.adapter = FavAdapter(favs)
 
         if (PebbleEmitter.isWatchConnected(applicationContext)) {
             PebbleEmitter.sendFavorites(applicationContext)
         }
     }
+
+    /** One favourite row. Tap (row or pencil) edits; long-press drags to reorder. */
+    private inner class FavAdapter(val items: MutableList<Favorite>) :
+        RecyclerView.Adapter<FavAdapter.VH>() {
+
+        inner class VH(v: View) : RecyclerView.ViewHolder(v)
+
+        override fun onCreateViewHolder(parent: android.view.ViewGroup, viewType: Int) =
+            VH(LayoutInflater.from(parent.context).inflate(R.layout.item_favorite, parent, false))
+
+        override fun getItemCount() = items.size
+
+        @android.annotation.SuppressLint("ClickableViewAccessibility")
+        override fun onBindViewHolder(holder: VH, position: Int) {
+            val fav = items[position]
+            holder.itemView.findViewById<ImageView>(R.id.favIcon)
+                .setImageResource(FavIcons.drawableRes(applicationContext, fav.icon))
+            holder.itemView.findViewById<TextView>(R.id.favLabel).text = fav.label
+            // Resolve the index at CLICK time — a drag may have moved this row since binding.
+            val edit = View.OnClickListener {
+                val pos = holder.bindingAdapterPosition
+                if (pos != RecyclerView.NO_POSITION) showFavoriteEditor(pos, items[pos])
+            }
+            holder.itemView.findViewById<View>(R.id.favRow).setOnClickListener(edit)
+            holder.itemView.findViewById<MaterialButton>(R.id.btnEditFav).setOnClickListener(edit)
+            // Grabbing the handle starts the drag right away (long-press anywhere still works).
+            holder.itemView.findViewById<View>(R.id.favDragHandle).setOnTouchListener { _, ev ->
+                if (ev.actionMasked == android.view.MotionEvent.ACTION_DOWN) {
+                    favDragHelper.startDrag(holder)
+                }
+                false
+            }
+        }
+    }
+
+    /** Long-press drag to reorder favourites; the new order persists and resyncs the watch. */
+    private val favDragHelper = androidx.recyclerview.widget.ItemTouchHelper(
+        object : androidx.recyclerview.widget.ItemTouchHelper.SimpleCallback(
+            androidx.recyclerview.widget.ItemTouchHelper.UP or
+                androidx.recyclerview.widget.ItemTouchHelper.DOWN, 0) {
+
+            override fun onMove(
+                rv: RecyclerView,
+                vh: RecyclerView.ViewHolder,
+                target: RecyclerView.ViewHolder,
+            ): Boolean {
+                val adapter = rv.adapter as? FavAdapter ?: return false
+                val from = vh.bindingAdapterPosition
+                val to = target.bindingAdapterPosition
+                if (from == RecyclerView.NO_POSITION || to == RecyclerView.NO_POSITION) return false
+                java.util.Collections.swap(adapter.items, from, to)
+                adapter.notifyItemMoved(from, to)
+                return true
+            }
+
+            override fun onSwiped(vh: RecyclerView.ViewHolder, direction: Int) {}
+
+            override fun clearView(rv: RecyclerView, vh: RecyclerView.ViewHolder) {
+                super.clearView(rv, vh)
+                // Drop finished: persist the new order and push it to the watch menu.
+                val adapter = rv.adapter as? FavAdapter ?: return
+                FavoritesStore.replaceAll(applicationContext, adapter.items)
+                if (PebbleEmitter.isWatchConnected(applicationContext)) {
+                    PebbleEmitter.sendFavorites(applicationContext)
+                }
+            }
+        })
 
     /**
      * Unified add/edit sheet. [index]/[existing] are null when adding. Holds the chosen icon id in a

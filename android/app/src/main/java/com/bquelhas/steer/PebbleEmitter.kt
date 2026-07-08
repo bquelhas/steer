@@ -93,6 +93,14 @@ object PebbleEmitter {
         send(context, "cancel") { it.addUint8(NavKeys.NAV_CANCEL, 1.toByte()) }
     }
 
+    /**
+     * Fires the smart "get ready" buzz on the watch (NAV_VIBE_NOW). [VibePlanner] decides
+     * the moment — once per maneuver, at a lead distance adapted to the current speed.
+     */
+    fun sendVibeNow(context: Context) {
+        send(context, "vibeNow") { it.addUint8(NavKeys.NAV_VIBE_NOW, 1.toByte()) }
+    }
+
     /** Pushes the vibrate-on-turn setting on its own (e.g. right after the user toggles it). */
     fun sendVibeOnTurn(context: Context) {
         send(context, "vibeOnTurn") {

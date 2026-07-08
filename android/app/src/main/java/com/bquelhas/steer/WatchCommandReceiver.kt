@@ -26,6 +26,15 @@ class WatchCommandReceiver : PebbleKit.PebbleDataReceiver(NavKeys.WATCH_UUID) {
         // notification listener is (i.e. essentially always), no foreground app needed.
         if (data.getUnsignedIntegerAsLong(NavKeys.NAV_REQUEST_FAVS) != null) {
             Log.i(TAG, "watch requested favorites -> resyncing")
+            // Mid-route (re)launch: replay the current nav frame FIRST (the favorites
+            // burst is paced and would delay it), so the watch shows the maneuver right
+            // away instead of "Waiting for signal..." until the next Maps update.
+            if (NavSession.active) {
+                NavSession.lastData?.let {
+                    Log.i(TAG, "nav active -> replaying last frame to the watch")
+                    PebbleEmitter.sendNav(context, it, null)
+                }
+            }
             PebbleEmitter.sendFavorites(context)
             return
         }

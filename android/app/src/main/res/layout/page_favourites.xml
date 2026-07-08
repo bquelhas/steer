@@ -89,11 +89,13 @@
             app:icon="@android:drawable/ic_input_add"
             android:text="@string/fav_add" />
 
-        <LinearLayout
+        <!-- RecyclerView (not a plain LinearLayout) so favourites can be reordered by
+             long-press drag (ItemTouchHelper). Nested scrolling is disabled in code —
+             the page's NestedScrollView owns the scroll. -->
+        <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/favoritesList"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical" />
+            android:layout_height="wrap_content" />
 
         <TextView
             android:id="@+id/favEmpty"

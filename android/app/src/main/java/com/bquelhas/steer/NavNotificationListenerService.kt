@@ -103,13 +103,27 @@ class NavNotificationListenerService : NotificationListenerService() {
         // the user doesn't have to open it by hand when a route starts.
         if (!navActive) {
             navActive = true
+            VibePlanner.reset()
             if (NavPrefs.isAutolaunch(applicationContext)) {
                 PebbleEmitter.launchWatchApp(applicationContext)
             }
-            // Start streaming GPS speed to the watch (speedometer + speed-limit alert).
-            // No-ops internally if both features are off or the location permission is denied.
+            // Start streaming GPS speed to the watch (speedometer, speed-limit alert and
+            // the smart-vibration timing). No-ops internally if all three are off or the
+            // location permission is denied.
             SpeedProvider.start(applicationContext)
         }
+
+        // Smart vibration: evaluated on EVERY update (before the de-dup — the display text
+        // can be unchanged while the buzz threshold is crossed by a speed change).
+        if (NavPrefs.isVibeOnTurn(applicationContext) &&
+            VibePlanner.onUpdate(data.directionId, data.instructionText, data.distanceMeters,
+                SpeedProvider.currentSpeedKmh())) {
+            PebbleEmitter.sendVibeNow(applicationContext)
+        }
+
+        // Keep the session snapshot fresh so a watchapp (re)launch mid-route can replay
+        // the current maneuver instead of waiting for the next notification update.
+        NavSession.update(data)
 
         // De-dup identical consecutive updates (nav notifications refresh often).
         val sig = "${data.directionId}|${data.instructionText}|${data.eta}"
@@ -132,6 +146,8 @@ class NavNotificationListenerService : NotificationListenerService() {
         if (!navActive) return
         lastSent = null
         navActive = false
+        NavSession.clear()
+        VibePlanner.reset()
         SpeedProvider.stop(applicationContext)
         // Session over: forget the watch-chosen travel mode so a manual route defaults to CAR.
         NavPrefs.setActiveMode(applicationContext, TravelMode.CAR)

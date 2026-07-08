@@ -13,79 +13,89 @@ package com.bquelhas.steer
  * fork-vs-keep, roundabout rotation) — that lives in the nav app's text, not the glyph.
  */
 object ManeuverFingerprints {
-    val TABLE: Array<Pair<ByteArray, Direction>> = arrayOf(
-        hex("000000008001c003e007f00fb00d800180018001800180018001800100000000") to Direction.STRAIGHT,  // name_change
-        hex("000000008001c003e007f00fb00d800180018001800180018001800100000000") to Direction.STRAIGHT,  // straight
-        hex("00000000200070003800fc1ffe3f1c7838607060206000600060006000000000") to Direction.LEFT,  // turn_normal_left
-        hex("000000000004000e001cf83ffc7f1e38061c060e060406000600060000000000") to Direction.RIGHT,  // turn_normal_right
-        hex("00000000f003f003f000f001b0033007000e000c001c00180018001800000000") to Direction.SLIGHT_LEFT,  // turn_slight_left
-        hex("00000000c00fc00f000f800fc00de00c70003000380018001800180000000000") to Direction.SLIGHT_RIGHT,  // turn_slight_right
-        hex("000000000000001e003f8033cc31ec307c303c30fc30fc300030003000000000") to Direction.SHARP_LEFT,  // turn_sharp_left
-        hex("0000000000007800fc00cc018c330c370c3e0c3c0c3f0c3f0c000c0000000000") to Direction.SHARP_RIGHT,  // turn_sharp_right
-        hex("00000000800fc01fe038603060306431ee33fc31f83070302030003000000000") to Direction.UTURN_LEFT,  // u_turn_left
-        hex("00000000f001f8031c070c060c068c26cc778c3f0c1f0c0e0c040c0000000000") to Direction.UTURN_RIGHT,  // u_turn_right
-        hex("00000000fc01fc017c38fc1cdc0f9c0780070003000300030003000300000000") to Direction.KEEP_LEFT,  // keep_left
-        hex("00000000803f803f183e383ff03be039e001c000c000c000c000c00000000000") to Direction.KEEP_RIGHT,  // keep_right
-        hex("00000000fc01fc017c38fc1cdc0f9c0780070003000300030003000300000000") to Direction.FORK_LEFT,  // fork_left
-        hex("00000000803f803f183e383ff03be039e001c000c000c000c000c00000000000") to Direction.FORK_RIGHT,  // fork_right
-        hex("000000008001c003e007f00fb00d8001c003e0076006700e300c300c00000000") to Direction.GENERIC_MERGE,  // merge
-        hex("000000008001c003e007f00fb00d8001c003e0076006700e300c300c00000000") to Direction.GENERIC_MERGE,  // merge_left
-        hex("000000008001c003e007f00fb00d8001c003e0076006700e300c300c00000000") to Direction.GENERIC_MERGE,  // merge_right
+    /** One baked glyph: its 256-bit signature, OUR maneuver, and the Maps asset name it
+     *  came from. [glyph] makes the ground-truth mapping testable against [MapsGlyphs]. */
+    class Entry(val sig: ByteArray, val direction: Direction, val glyph: String) {
+        operator fun component1() = sig
+        operator fun component2() = direction
+    }
+
+    val TABLE: Array<Entry> = arrayOf(
+        e("000000008001c003e007f00fb00d800180018001800180018001800100000000", Direction.STRAIGHT, "name_change"),
+        e("000000008001c003e007f00fb00d800180018001800180018001800100000000", Direction.STRAIGHT, "straight"),
+        e("00000000200070003800fc1ffe3f1c7838607060206000600060006000000000", Direction.LEFT, "turn_normal_left"),
+        e("000000000004000e001cf83ffc7f1e38061c060e060406000600060000000000", Direction.RIGHT, "turn_normal_right"),
+        e("00000000f003f003f000f001b0033007000e000c001c00180018001800000000", Direction.SLIGHT_LEFT, "turn_slight_left"),
+        e("00000000c00fc00f000f800fc00de00c70003000380018001800180000000000", Direction.SLIGHT_RIGHT, "turn_slight_right"),
+        e("000000000000001e003f8033cc31ec307c303c30fc30fc300030003000000000", Direction.SHARP_LEFT, "turn_sharp_left"),
+        e("0000000000007800fc00cc018c330c370c3e0c3c0c3f0c3f0c000c0000000000", Direction.SHARP_RIGHT, "turn_sharp_right"),
+        e("00000000800fc01fe038603060306431ee33fc31f83070302030003000000000", Direction.UTURN_LEFT, "u_turn_left"),
+        e("00000000f001f8031c070c060c068c26cc778c3f0c1f0c0e0c040c0000000000", Direction.UTURN_RIGHT, "u_turn_right"),
+        e("00000000fc01fc017c38fc1cdc0f9c0780070003000300030003000300000000", Direction.KEEP_LEFT, "keep_left"),
+        e("00000000803f803f183e383ff03be039e001c000c000c000c000c00000000000", Direction.KEEP_RIGHT, "keep_right"),
+        e("00000000fc01fc017c38fc1cdc0f9c0780070003000300030003000300000000", Direction.FORK_LEFT, "fork_left"),
+        e("00000000803f803f183e383ff03be039e001c000c000c000c000c00000000000", Direction.FORK_RIGHT, "fork_right"),
+        e("000000008001c003e007f00fb00d8001c003e0076006700e300c300c00000000", Direction.GENERIC_MERGE, "merge"),
+        e("000000008001c003e007f00fb00d8001c003e0076006700e300c300c00000000", Direction.GENERIC_MERGE, "merge_left"),
+        e("000000008001c003e007f00fb00d8001c003e0076006700e300c300c00000000", Direction.GENERIC_MERGE, "merge_right"),
         // Roundabout mapping (Bruno-confirmed 2026-07-08). Circulation is COUNTRY-FIXED, not
         // encoded by the exit arrow: Portugal/right-hand traffic circulates CCW and always maps
         // to OUR _RIGHT icon family; UK/left-hand traffic circulates CW -> _LEFT family. The
         // suffix (sharp/normal/slight + left/right/straight/u_turn) is the EXIT ANGLE only, which
         // picks the RBT number (45deg buckets); straight uses the dedicated EXIT icon.
-        hex("000000006000f800fc018c038c038c01fc39f83b303f303eb03fb03f00000000") to Direction.ROUNDABOUT_1_RIGHT,  // roundabout_enter_and_exit_ccw_sharp_right   45
-        hex("0000000000003c0c7e1cee38c77fc77fee387e1c3c0c18001800180000000000") to Direction.ROUNDABOUT_2_RIGHT,  // roundabout_enter_and_exit_ccw_normal_right  90
-        hex("00000000c01fc01f001ef01ff81bb81b1c031c03b803f801f000600000000000") to Direction.ROUNDABOUT_3_RIGHT,  // roundabout_enter_and_exit_ccw_slight_right  135
-        hex("8001c003e007f00fb00dc003e007700e300c300c700ee007c003800100000000") to Direction.ROUNDABOUT_EXIT_RIGHT,  // roundabout_enter_and_exit_ccw_straight    180
-        hex("00000000fc01fc017c00fc0fdc1fdc1dc038c038c01d801f000f000600000000") to Direction.ROUNDABOUT_5_RIGHT,  // roundabout_enter_and_exit_ccw_slight_left   215
-        hex("000000000000303c387e1c77fee3fee31c77387e303c00180018001800000000") to Direction.ROUNDABOUT_6_RIGHT,  // roundabout_enter_and_exit_ccw_normal_left   270
-        hex("000000000006001f803fc031c03180319c3fdc1ffc0c7c0cfc0dfc0d00000000") to Direction.ROUNDABOUT_7_RIGHT,  // roundabout_enter_and_exit_ccw_sharp_left    315
-        hex("0000c003e007e00e700c700ce00ee006c002d806f807f003e007c00600000000") to Direction.ROUNDABOUT_8_RIGHT,  // roundabout_enter_and_exit_ccw_u_turn        360
-        hex("000000000006001f803fc031c03180319c3fdc1ffc0c7c0cfc0dfc0d00000000") to Direction.ROUNDABOUT_1_LEFT,  // roundabout_enter_and_exit_cw_sharp_left      45
-        hex("000000000000303c387e1c77fee3fee31c77387e303c00180018001800000000") to Direction.ROUNDABOUT_2_LEFT,  // roundabout_enter_and_exit_cw_normal_left     90
-        hex("00000000f803f8037800f80fd81fd81dc038c038c01d801f000f000600000000") to Direction.ROUNDABOUT_3_LEFT,  // roundabout_enter_and_exit_cw_slight_left     135
-        hex("8001c003e007f00fb00dc003e007700e300c300c700ee007c003800100000000") to Direction.ROUNDABOUT_EXIT_LEFT,  // roundabout_enter_and_exit_cw_straight     180
-        hex("00000000803f803f003ef03ff83bb83b1c031c03b803f801f000600000000000") to Direction.ROUNDABOUT_5_LEFT,  // roundabout_enter_and_exit_cw_slight_right    215
-        hex("0000000000003c0c7e1cee38c77fc77fee387e1c3c0c18001800180000000000") to Direction.ROUNDABOUT_6_LEFT,  // roundabout_enter_and_exit_cw_normal_right    270
-        hex("000000006000f800fc018c038c038c01fc39f83b303f303eb03fb03f00000000") to Direction.ROUNDABOUT_7_LEFT,  // roundabout_enter_and_exit_cw_sharp_right     315
-        hex("0000c003e0077007300e300e700760074003601be01fc00fe007600300000000") to Direction.ROUNDABOUT_8_LEFT,  // roundabout_enter_and_exit_cw_u_turn          360
+        e("000000006000f800fc018c038c038c01fc39f83b303f303eb03fb03f00000000", Direction.ROUNDABOUT_1_RIGHT, "roundabout_enter_and_exit_ccw_sharp_right"),  // 45
+        e("0000000000003c0c7e1cee38c77fc77fee387e1c3c0c18001800180000000000", Direction.ROUNDABOUT_2_RIGHT, "roundabout_enter_and_exit_ccw_normal_right"),  // 90
+        e("00000000c01fc01f001ef01ff81bb81b1c031c03b803f801f000600000000000", Direction.ROUNDABOUT_3_RIGHT, "roundabout_enter_and_exit_ccw_slight_right"),  // 135
+        e("8001c003e007f00fb00dc003e007700e300c300c700ee007c003800100000000", Direction.ROUNDABOUT_EXIT_RIGHT, "roundabout_enter_and_exit_ccw_straight"),  // 180
+        e("00000000fc01fc017c00fc0fdc1fdc1dc038c038c01d801f000f000600000000", Direction.ROUNDABOUT_5_RIGHT, "roundabout_enter_and_exit_ccw_slight_left"),  // 215
+        e("000000000000303c387e1c77fee3fee31c77387e303c00180018001800000000", Direction.ROUNDABOUT_6_RIGHT, "roundabout_enter_and_exit_ccw_normal_left"),  // 270
+        e("000000000006001f803fc031c03180319c3fdc1ffc0c7c0cfc0dfc0d00000000", Direction.ROUNDABOUT_7_RIGHT, "roundabout_enter_and_exit_ccw_sharp_left"),  // 315
+        e("0000c003e007e00e700c700ce00ee006c002d806f807f003e007c00600000000", Direction.ROUNDABOUT_8_RIGHT, "roundabout_enter_and_exit_ccw_u_turn"),  // 360
+        e("000000000006001f803fc031c03180319c3fdc1ffc0c7c0cfc0dfc0d00000000", Direction.ROUNDABOUT_1_LEFT, "roundabout_enter_and_exit_cw_sharp_left"),  // 45
+        e("000000000000303c387e1c77fee3fee31c77387e303c00180018001800000000", Direction.ROUNDABOUT_2_LEFT, "roundabout_enter_and_exit_cw_normal_left"),  // 90
+        e("00000000f803f8037800f80fd81fd81dc038c038c01d801f000f000600000000", Direction.ROUNDABOUT_3_LEFT, "roundabout_enter_and_exit_cw_slight_left"),  // 135
+        e("8001c003e007f00fb00dc003e007700e300c300c700ee007c003800100000000", Direction.ROUNDABOUT_EXIT_LEFT, "roundabout_enter_and_exit_cw_straight"),  // 180
+        e("00000000803f803f003ef03ff83bb83b1c031c03b803f801f000600000000000", Direction.ROUNDABOUT_5_LEFT, "roundabout_enter_and_exit_cw_slight_right"),  // 215
+        e("0000000000003c0c7e1cee38c77fc77fee387e1c3c0c18001800180000000000", Direction.ROUNDABOUT_6_LEFT, "roundabout_enter_and_exit_cw_normal_right"),  // 270
+        e("000000006000f800fc018c038c038c01fc39f83b303f303eb03fb03f00000000", Direction.ROUNDABOUT_7_LEFT, "roundabout_enter_and_exit_cw_sharp_right"),  // 315
+        e("0000c003e0077007300e300e700760074003601be01fc00fe007600300000000", Direction.ROUNDABOUT_8_LEFT, "roundabout_enter_and_exit_cw_u_turn"),  // 360
         // Angle-less roundabout glyphs: "generico" (enter / enter_and_exit) -> slight-right bucket
         // (RBT3), "sair" (plain exit) -> normal-right bucket (RBT2), per Bruno's closest-arrow rule.
-        hex("00000004f00ffc1f9c3fce7f862e060e0e061c07fc03f0016000600000000000") to Direction.ROUNDABOUT_3_RIGHT,  // roundabout_enter_and_exit_ccw
-        hex("00000004f00ffc1f9c3fce7f862e060e0e061c07fc03f0016000600000000000") to Direction.ROUNDABOUT_3_RIGHT,  // roundabout_enter_ccw
-        hex("00002000f00ff83ffc39fe73746170606070e038c03f800f0006000600000000") to Direction.ROUNDABOUT_3_LEFT,  // roundabout_enter_and_exit_cw
-        hex("00002000f00ff83ffc39fe73746170606070e038c03f800f0006000600000000") to Direction.ROUNDABOUT_3_LEFT,  // roundabout_enter_cw
-        hex("000000018003c007e00ff00da0098001f003fc07180e000c001c001800000000") to Direction.ROUNDABOUT_2_RIGHT,  // roundabout_exit_ccw
-        hex("00008000c001e003f007b00f90058001c00fe03f701830003800180000000000") to Direction.ROUNDABOUT_2_LEFT,  // roundabout_exit_cw
-        hex("00000000fc01fc017c38fc1cdc0f9c0780070003000300030003000300000000") to Direction.RAMP_LEFT,  // off_ramp_keep_left
-        hex("00004000f03878383e38fc39fc3f383f303c1038003800380038003800000000") to Direction.RAMP_LEFT,  // off_ramp_normal_left
-        hex("000000000000001e003f8033cc31ec307c303c30fc30fc300030003000000000") to Direction.RAMP_LEFT,  // off_ramp_sharp_left
-        hex("00000000f003f003f000f001b0033007000e000c001c00180018001800000000") to Direction.RAMP_LEFT,  // off_ramp_slight_left
-        hex("00000000800fc01fe038603060306431ee33fc31f83070302030003000000000") to Direction.RAMP_LEFT,  // off_ramp_u_turn_left
-        hex("00000000fc01fc017c38fc1cdc0f9c0780070003000300030003000300000000") to Direction.RAMP_LEFT,  // on_ramp_keep_left
-        hex("00000000200070003800fc1ffe3f1c7838607060206000600060006000000000") to Direction.RAMP_LEFT,  // on_ramp_normal_left
-        hex("000000000000001e003f8033cc31ec307c303c30fc30fc300030003000000000") to Direction.RAMP_LEFT,  // on_ramp_sharp_left
-        hex("00000000f003f003f000f001b0033007000e000c001c00180018001800000000") to Direction.RAMP_LEFT,  // on_ramp_slight_left
-        hex("00000000800fc01fe038603060306431ee33fc31f83070302030003000000000") to Direction.RAMP_LEFT,  // on_ramp_u_turn_left
-        hex("00000000803f803f183e383ff03be039e001c000c000c000c000c00000000000") to Direction.RAMP_RIGHT,  // off_ramp_keep_right
-        hex("000000021c0f1c1e1c7c9c3ffc3ffc1c3c0c1c081c001c001c001c0000000000") to Direction.RAMP_RIGHT,  // off_ramp_normal_right
-        hex("0000000000007800fc00cc018c330c370c3e0c3c0c3f0c3f0c000c0000000000") to Direction.RAMP_RIGHT,  // off_ramp_sharp_right
-        hex("00000000c00fc00f000f800fc00de00c70003000380018001800180000000000") to Direction.RAMP_RIGHT,  // off_ramp_slight_right
-        hex("00000000f001f8031c070c060c068c26cc778c3f0c1f0c0e0c040c0000000000") to Direction.RAMP_RIGHT,  // off_ramp_u_turn_right
-        hex("00000000803f803f183e383ff03be039e001c000c000c000c000c00000000000") to Direction.RAMP_RIGHT,  // on_ramp_keep_right
-        hex("000000000004000e001cf83ffc7f1e38061c060e060406000600060000000000") to Direction.RAMP_RIGHT,  // on_ramp_normal_right
-        hex("0000000000007800fc00cc018c330c370c3e0c3c0c3f0c3f0c000c0000000000") to Direction.RAMP_RIGHT,  // on_ramp_sharp_right
-        hex("00000000c00fc00f000f800fc00de00c70003000380018001800180000000000") to Direction.RAMP_RIGHT,  // on_ramp_slight_right
-        hex("00000000f001f8031c070c060c068c26cc778c3f0c1f0c0e0c040c0000000000") to Direction.RAMP_RIGHT,  // on_ramp_u_turn_right
-        hex("0000c003f00f381c18189819cc338c3118181818300c700ee007c00380010000") to Direction.ARRIVE,  // destination
-        hex("0000c003f00f381c18189819cc338c3118181818300c700ee007c00380010000") to Direction.ARRIVE,  // destination_straight
-        hex("30007c00ce009601bb01b301c601c63aec3ffc3fb87bd07fc07fc0fb00000000") to Direction.ARRIVE_LEFT,  // destination_left
-        hex("000c003e0073806980dd80cd80635c63fc37fc3fde1dfe0bfe03df0300000000") to Direction.ARRIVE_RIGHT,  // destination_right
-        hex("000000008001c003e007f00fb00d800180018001800180018001800100000000") to Direction.DEPART,  // depart
+        e("00000004f00ffc1f9c3fce7f862e060e0e061c07fc03f0016000600000000000", Direction.ROUNDABOUT_3_RIGHT, "roundabout_enter_and_exit_ccw"),
+        e("00000004f00ffc1f9c3fce7f862e060e0e061c07fc03f0016000600000000000", Direction.ROUNDABOUT_3_RIGHT, "roundabout_enter_ccw"),
+        e("00002000f00ff83ffc39fe73746170606070e038c03f800f0006000600000000", Direction.ROUNDABOUT_3_LEFT, "roundabout_enter_and_exit_cw"),
+        e("00002000f00ff83ffc39fe73746170606070e038c03f800f0006000600000000", Direction.ROUNDABOUT_3_LEFT, "roundabout_enter_cw"),
+        e("000000018003c007e00ff00da0098001f003fc07180e000c001c001800000000", Direction.ROUNDABOUT_2_RIGHT, "roundabout_exit_ccw"),
+        e("00008000c001e003f007b00f90058001c00fe03f701830003800180000000000", Direction.ROUNDABOUT_2_LEFT, "roundabout_exit_cw"),
+        e("00000000fc01fc017c38fc1cdc0f9c0780070003000300030003000300000000", Direction.RAMP_LEFT, "off_ramp_keep_left"),
+        e("00004000f03878383e38fc39fc3f383f303c1038003800380038003800000000", Direction.RAMP_LEFT, "off_ramp_normal_left"),
+        e("000000000000001e003f8033cc31ec307c303c30fc30fc300030003000000000", Direction.RAMP_LEFT, "off_ramp_sharp_left"),
+        e("00000000f003f003f000f001b0033007000e000c001c00180018001800000000", Direction.RAMP_LEFT, "off_ramp_slight_left"),
+        e("00000000800fc01fe038603060306431ee33fc31f83070302030003000000000", Direction.RAMP_LEFT, "off_ramp_u_turn_left"),
+        e("00000000fc01fc017c38fc1cdc0f9c0780070003000300030003000300000000", Direction.RAMP_LEFT, "on_ramp_keep_left"),
+        e("00000000200070003800fc1ffe3f1c7838607060206000600060006000000000", Direction.RAMP_LEFT, "on_ramp_normal_left"),
+        e("000000000000001e003f8033cc31ec307c303c30fc30fc300030003000000000", Direction.RAMP_LEFT, "on_ramp_sharp_left"),
+        e("00000000f003f003f000f001b0033007000e000c001c00180018001800000000", Direction.RAMP_LEFT, "on_ramp_slight_left"),
+        e("00000000800fc01fe038603060306431ee33fc31f83070302030003000000000", Direction.RAMP_LEFT, "on_ramp_u_turn_left"),
+        e("00000000803f803f183e383ff03be039e001c000c000c000c000c00000000000", Direction.RAMP_RIGHT, "off_ramp_keep_right"),
+        e("000000021c0f1c1e1c7c9c3ffc3ffc1c3c0c1c081c001c001c001c0000000000", Direction.RAMP_RIGHT, "off_ramp_normal_right"),
+        e("0000000000007800fc00cc018c330c370c3e0c3c0c3f0c3f0c000c0000000000", Direction.RAMP_RIGHT, "off_ramp_sharp_right"),
+        e("00000000c00fc00f000f800fc00de00c70003000380018001800180000000000", Direction.RAMP_RIGHT, "off_ramp_slight_right"),
+        e("00000000f001f8031c070c060c068c26cc778c3f0c1f0c0e0c040c0000000000", Direction.RAMP_RIGHT, "off_ramp_u_turn_right"),
+        e("00000000803f803f183e383ff03be039e001c000c000c000c000c00000000000", Direction.RAMP_RIGHT, "on_ramp_keep_right"),
+        e("000000000004000e001cf83ffc7f1e38061c060e060406000600060000000000", Direction.RAMP_RIGHT, "on_ramp_normal_right"),
+        e("0000000000007800fc00cc018c330c370c3e0c3c0c3f0c3f0c000c0000000000", Direction.RAMP_RIGHT, "on_ramp_sharp_right"),
+        e("00000000c00fc00f000f800fc00de00c70003000380018001800180000000000", Direction.RAMP_RIGHT, "on_ramp_slight_right"),
+        e("00000000f001f8031c070c060c068c26cc778c3f0c1f0c0e0c040c0000000000", Direction.RAMP_RIGHT, "on_ramp_u_turn_right"),
+        e("0000c003f00f381c18189819cc338c3118181818300c700ee007c00380010000", Direction.ARRIVE, "destination"),
+        e("0000c003f00f381c18189819cc338c3118181818300c700ee007c00380010000", Direction.ARRIVE, "destination_straight"),
+        e("30007c00ce009601bb01b301c601c63aec3ffc3fb87bd07fc07fc0fb00000000", Direction.ARRIVE_LEFT, "destination_left"),
+        e("000c003e0073806980dd80cd80635c63fc37fc3fde1dfe0bfe03df0300000000", Direction.ARRIVE_RIGHT, "destination_right"),
+        e("000000008001c003e007f00fb00d800180018001800180018001800100000000", Direction.DEPART, "depart"),
     )
+
+    private fun e(sigHex: String, direction: Direction, glyph: String) =
+        Entry(hex(sigHex), direction, glyph)
 
     /** Parses a 64-hex-char signature string into a 32-byte array. */
     fun hex(s: String): ByteArray =

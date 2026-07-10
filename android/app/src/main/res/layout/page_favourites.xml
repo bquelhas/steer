@@ -48,6 +48,18 @@
             app:icon="@drawable/ic_arrow_drop_down"
             app:iconGravity="end" />
 
+        <!-- Shown only for Organic Maps / CoMaps: their deep link can't auto-start navigation. -->
+        <TextView
+            android:id="@+id/navAppNote"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:fontFamily="sans-serif-condensed"
+            android:visibility="gone"
+            android:text="@string/nav_app_manual_start"
+            android:textColor="?attr/colorPrimary"
+            android:textAppearance="?attr/textAppearanceBodySmall" />
+
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnGrantOverlay"
             style="@style/Widget.Material3.Button.TonalButton"

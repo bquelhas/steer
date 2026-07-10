@@ -38,6 +38,7 @@
     <string name="section_navigation">Navigation</string>
     <string name="nav_app_label">Navigation app</string>
     <string name="nav_app_caption">Used when you start a route by picking a favourite on the watch.</string>
+    <string name="nav_app_manual_start">Organic Maps and CoMaps can\'t auto-start navigation — they open the route, then you tap Start in the app. The watch gets the maneuvers after that.</string>
     <string name="nav_app_auto">Auto</string>
     <string name="nav_app_maps">Maps</string>
     <string name="nav_app_osmand">OsmAnd</string>

@@ -31,7 +31,6 @@ enum class EtaMode {
 object NaviParser {
 
     const val PKG_GOOGLE_MAPS = "com.google.android.apps.maps"
-    const val PKG_WAZE = "com.waze"
     const val PKG_OSMAND = "net.osmand.plus"
     const val PKG_OSMAND_FREE = "net.osmand"
     const val PKG_COMAPS = "app.comaps.google"
@@ -47,11 +46,6 @@ object NaviParser {
     // be misread as a turn. [ICON_ONLY] forces the glyph path (maneuverFromText=false).
     private val ICON_ONLY = setOf(PKG_COMAPS, PKG_ORGANIC)
 
-    // Waze is deliberately NOT in SUPPORTED: its nav notification is only
-    // "Waze - Running. Tap to open." — it never exposes the maneuver (no text, no glyph
-    // in the notification). The only programmatic turn-by-turn feed Waze offers is the
-    // partner/Transport SDK (rideshare), which needs a commercial agreement. We keep
-    // [PKG_WAZE] for the favorites deep-link launcher only ([NavLauncher]).
     val SUPPORTED = setOf(PKG_GOOGLE_MAPS, PKG_OSMAND, PKG_OSMAND_FREE, PKG_COMAPS, PKG_ORGANIC)
 
     fun parse(

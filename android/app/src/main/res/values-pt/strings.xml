@@ -35,6 +35,7 @@
     <string name="section_navigation">Navegação</string>
     <string name="nav_app_label">App de navegação</string>
     <string name="nav_app_caption">Usada quando inicias uma rota escolhendo um favorito no relógio.</string>
+    <string name="nav_app_manual_start">O Organic Maps e o CoMaps não arrancam a navegação sozinhos — abrem a rota e depois tens de tocar em Start na app. Só a partir daí o relógio recebe as manobras.</string>
     <string name="nav_app_auto">Auto</string>
     <string name="nav_app_maps">Maps</string>
     <string name="nav_app_osmand">OsmAnd</string>

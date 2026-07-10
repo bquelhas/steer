@@ -474,6 +474,7 @@ class MainActivity : AppCompatActivity() {
     /** Nav-app picker: which navigator opens when a favourite is started from the watch. */
     private fun setupNavAppToggle(root: View) {
         val button = root.findViewById<MaterialButton>(R.id.navAppButton)
+        val note = root.findViewById<TextView>(R.id.navAppNote)
         // Index-aligned with the label list below.
         val apps = listOf(NavApp.AUTO, NavApp.GOOGLE_MAPS, NavApp.OSMAND, NavApp.ORGANIC, NavApp.COMAPS)
         val labels = listOf(
@@ -482,8 +483,11 @@ class MainActivity : AppCompatActivity() {
             getString(R.string.nav_app_comaps),
         )
         fun refreshLabel() {
-            val idx = apps.indexOf(NavPrefs.getNavApp(applicationContext)).coerceAtLeast(0)
-            button.text = labels[idx]
+            val app = NavPrefs.getNavApp(applicationContext)
+            button.text = labels[apps.indexOf(app).coerceAtLeast(0)]
+            // Organic Maps / CoMaps can't auto-start navigation (they open the route plan);
+            // warn about the manual Start tap only when one of them is selected.
+            note.visibility = if (app == NavApp.ORGANIC || app == NavApp.COMAPS) View.VISIBLE else View.GONE
         }
         refreshLabel()
         button.setOnClickListener { anchor ->

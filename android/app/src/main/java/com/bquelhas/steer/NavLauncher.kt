@@ -5,12 +5,14 @@ import android.app.KeyguardManager
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.location.Geocoder
 import android.location.LocationManager
 import android.net.Uri
 import android.provider.Settings
 import android.util.Log
 import android.widget.Toast
 import androidx.core.content.ContextCompat
+import java.util.Locale
 
 /**
  * Starts turn-by-turn navigation to a destination in one of the supported navigators, in the
@@ -51,6 +53,36 @@ object NavLauncher {
         return lat to lon
     }
 
+    /**
+     * Geocodes a free-text address to coordinates. OsmAnd / Organic Maps / CoMaps navigate only
+     * to coordinates — handed a text query OsmAnd shows an "Invalid Format" toast — so an address
+     * favourite has to be resolved first. MUST run OFF the main thread (Geocoder does network IO).
+     */
+    private fun geocode(context: Context, query: String): Pair<Double, Double>? {
+        if (!Geocoder.isPresent()) return null
+        return try {
+            @Suppress("DEPRECATION")
+            val results = Geocoder(context, Locale.getDefault()).getFromLocationName(query, 1)
+            results?.firstOrNull()?.let { it.latitude to it.longitude }
+        } catch (e: Exception) {
+            Log.w(TAG, "geocode failed for '$query': ${e.message}")
+            null
+        }
+    }
+
+    /**
+     * Turns an address into a "lat,lon" string when it can be geocoded; leaves an existing
+     * "lat,lon" (or an address that can't be geocoded) untouched. Coordinates work for every
+     * navigator, so resolving up front fixes OsmAnd / Organic / CoMaps without hurting Maps.
+     * MUST run off the main thread.
+     */
+    private fun resolveQuery(context: Context, query: String): String {
+        if (parseLatLon(query) != null) return query
+        val geo = geocode(context, query) ?: return query
+        Log.i(TAG, "geocoded '$query' -> ${geo.first},${geo.second}")
+        return "${geo.first},${geo.second}"
+    }
+
     /** Best-effort current position for the OSM-based apps that need an explicit route start. */
     private fun lastKnownLatLon(context: Context): Pair<Double, Double>? {
         val fine = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION)
@@ -87,18 +119,21 @@ object NavLauncher {
         val dest = parseLatLon(query)
         if (dest != null) {
             val (lat, lon) = dest
+            // force=true starts navigation without OsmAnd's confirmation dialog.
             val sb = StringBuilder(
-                "osmand.api://navigate?dest_lat=$lat&dest_lon=$lon&dest_name=&profile=${mode.osmandProfile}"
+                "osmand.api://navigate?dest_lat=$lat&dest_lon=$lon&dest_name=" +
+                    "&profile=${mode.osmandProfile}&force=true"
             )
             lastKnownLatLon(context)?.let { (slat, slon) ->
                 sb.append("&start_lat=$slat&start_lon=$slon&start_name=")
             }
             return Intent(Intent.ACTION_VIEW, Uri.parse(sb.toString())).setPackage(pkg)
         }
-        // Address-only: the OsmAnd navigate API needs coordinates, so fall back to plain
-        // navigation (defaults to OsmAnd's current profile — no mode control on this path).
+        // Address we couldn't resolve to coordinates: open OsmAnd's SEARCH for it (shows the
+        // place, one tap to navigate) instead of google.navigation:q=<text>, which OsmAnd
+        // rejects with an "Invalid Format" toast.
         val encoded = Uri.encode(query.trim())
-        return Intent(Intent.ACTION_VIEW, Uri.parse("google.navigation:q=$encoded")).setPackage(pkg)
+        return Intent(Intent.ACTION_VIEW, Uri.parse("geo:0,0?q=$encoded")).setPackage(pkg)
     }
 
     /** Organic Maps (`om://`) and CoMaps (`cm://`) share the same `route?...&type=` structure. */
@@ -153,6 +188,17 @@ object NavLauncher {
      * [NavLaunchNotifier]) so the destination is never silently dropped.
      */
     fun launchForWatch(context: Context, label: String, query: String, mode: TravelMode) {
+        // Geocode an address to coordinates off the main thread first (OsmAnd / Organic / CoMaps
+        // need coordinates), then launch. The process is kept alive by the notification listener
+        // service that owns the watch receiver, so a short worker thread is safe here.
+        val appCtx = context.applicationContext
+        Thread {
+            val resolved = resolveQuery(appCtx, query)
+            launchResolvedForWatch(appCtx, label, resolved, mode)
+        }.start()
+    }
+
+    private fun launchResolvedForWatch(context: Context, label: String, query: String, mode: TravelMode) {
         val intent = resolveForWatch(context, query, mode).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         if (Settings.canDrawOverlays(context)) {
             // When the phone is locked, a direct startActivity queues the navigator behind the

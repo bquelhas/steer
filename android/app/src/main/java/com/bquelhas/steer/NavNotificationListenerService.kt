@@ -55,11 +55,24 @@ class NavNotificationListenerService : NotificationListenerService() {
         PebbleEmitter.sendFavorites(applicationContext)
     }
 
+    /**
+     * A turn-by-turn navigation notification, as opposed to the map app's other notifications
+     * (Google Maps Timeline recaps, commute suggestions, "location in use", etc.). Real nav is
+     * an ongoing foreground-service notification and/or carries category "navigation".
+     */
+    private fun isNavNotification(sbn: StatusBarNotification): Boolean =
+        sbn.isOngoing || sbn.notification.category == Notification.CATEGORY_NAVIGATION
+
     override fun onNotificationPosted(sbn: StatusBarNotification) {
         val pkg = sbn.packageName
         if (pkg !in NaviParser.SUPPORTED) return
         // User can narrow which navigators Steer reads (Customization tab). Default = all supported.
         if (pkg !in NavPrefs.getDetectApps(applicationContext)) return
+        // Only forward real turn-by-turn. A navigation notification is ongoing (foreground
+        // service) and/or category "navigation"; the map app's other notifications — e.g.
+        // Google Maps' "Your June Timeline" recap or commute tips — are neither, and would
+        // otherwise be misread as a straight-ahead maneuver on the watch.
+        if (!isNavNotification(sbn)) return
 
         val extras = sbn.notification.extras
         val title = extras.getCharSequence(Notification.EXTRA_TITLE)?.toString()
@@ -145,6 +158,9 @@ class NavNotificationListenerService : NotificationListenerService() {
 
     override fun onNotificationRemoved(sbn: StatusBarNotification) {
         if (sbn.packageName !in NaviParser.SUPPORTED) return
+        // Only the nav notification's removal ends a session; ignore dismissals of the map
+        // app's other notifications (e.g. a Timeline recap) so they can't tear down a route.
+        if (!isNavNotification(sbn)) return
         // Don't end the session yet — Maps may re-post within moments. Schedule the teardown; a
         // fresh nav update (onNotificationPosted) cancels it. Only a real, sustained removal wins.
         endHandler.removeCallbacks(endSessionRunnable)

@@ -57,11 +57,18 @@ class NavNotificationListenerService : NotificationListenerService() {
 
     /**
      * A turn-by-turn navigation notification, as opposed to the map app's other notifications
-     * (Google Maps Timeline recaps, commute suggestions, "location in use", etc.). Real nav is
-     * an ongoing foreground-service notification and/or carries category "navigation".
+     * (Timeline recaps, "location in use", and especially map-download progress). The tests are
+     * STRUCTURAL, not text-based, so they work in every language:
+     *  - a progress bar (determinate or indeterminate) means a download / long task, never nav;
+     *  - real nav is an ongoing foreground-service notification and/or category "navigation".
      */
-    private fun isNavNotification(sbn: StatusBarNotification): Boolean =
-        sbn.isOngoing || sbn.notification.category == Notification.CATEGORY_NAVIGATION
+    private fun isNavNotification(sbn: StatusBarNotification): Boolean {
+        val extras = sbn.notification.extras
+        val hasProgress = extras.getInt(Notification.EXTRA_PROGRESS_MAX, 0) > 0 ||
+            extras.getBoolean(Notification.EXTRA_PROGRESS_INDETERMINATE, false)
+        if (hasProgress) return false
+        return sbn.isOngoing || sbn.notification.category == Notification.CATEGORY_NAVIGATION
+    }
 
     override fun onNotificationPosted(sbn: StatusBarNotification) {
         val pkg = sbn.packageName
@@ -88,12 +95,6 @@ class NavNotificationListenerService : NotificationListenerService() {
             NavPrefs.getUnitSystem(applicationContext),
             etaMode,
         ) ?: return
-
-        // Content guard: a real turn-by-turn update carries a distance-to-the-maneuver and/or a
-        // maneuver keyword. This drops the map app's OTHER ongoing notifications that slip past
-        // the ongoing/category check — e.g. OsmAnd's (or CoMaps'/Organic's) map-download progress
-        // — which would otherwise show as a stray "straight ahead" on the watch.
-        if (data.distanceMeters == null && !data.maneuverFromText) return
 
         // A live nav update arrived: cancel any pending session-end so a Maps notification
         // cancel+repost doesn't tear down the session (and its travel mode) between frames.

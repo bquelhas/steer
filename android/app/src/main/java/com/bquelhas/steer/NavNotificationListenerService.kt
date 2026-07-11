@@ -56,18 +56,28 @@ class NavNotificationListenerService : NotificationListenerService() {
     }
 
     /**
-     * A turn-by-turn navigation notification, as opposed to the map app's other notifications
-     * (Timeline recaps, "location in use", and especially map-download progress). The tests are
-     * STRUCTURAL, not text-based, so they work in every language:
-     *  - a progress bar (determinate or indeterminate) means a download / long task, never nav;
-     *  - real nav is an ongoing foreground-service notification and/or category "navigation".
+     * A turn-by-turn navigation notification, as opposed to the map app's other notifications.
+     * Tests are STRUCTURAL (not text), so they work in every language. Based on reading each
+     * app's source, the notification types are:
+     *   OsmAnd: Navigation (category NAVIGATION), Download (progress bar), GPX/trip recording
+     *           (ongoing, NO category), Fallback "app running" (not ongoing), Android Auto.
+     *   Organic Maps / CoMaps: Navigation (category NAVIGATION), Downloader (progress bar),
+     *           TrackRecording (ongoing, category SERVICE).
+     *   Google Maps: Navigation (ongoing), Timeline recap / tips (not ongoing).
+     * Only the navigation notification carries category NAVIGATION in the OSM-family apps, so:
+     *  - a progress bar => download / long task, never nav;
+     *  - category NAVIGATION => nav (drops OsmAnd GPX + OM/CoMaps track recording, which lack it);
+     *  - Google Maps doesn't reliably set the category, so fall back to its ongoing flag (its
+     *    non-nav notifications, e.g. Timeline, are not ongoing).
      */
     private fun isNavNotification(sbn: StatusBarNotification): Boolean {
-        val extras = sbn.notification.extras
+        val n = sbn.notification
+        val extras = n.extras
         val hasProgress = extras.getInt(Notification.EXTRA_PROGRESS_MAX, 0) > 0 ||
             extras.getBoolean(Notification.EXTRA_PROGRESS_INDETERMINATE, false)
         if (hasProgress) return false
-        return sbn.isOngoing || sbn.notification.category == Notification.CATEGORY_NAVIGATION
+        if (n.category == Notification.CATEGORY_NAVIGATION) return true
+        return sbn.packageName == NaviParser.PKG_GOOGLE_MAPS && sbn.isOngoing
     }
 
     override fun onNotificationPosted(sbn: StatusBarNotification) {
